@@ -18,14 +18,22 @@ export function AuthProvider({ children }) {
   const [user,    setUser]    = useState(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const token = Cookies.get('skanema_token')
-    const data  = Cookies.get('skanema_user')
-    if (token && data) {
-      try { setUser(JSON.parse(data)) } catch (_) {}
+ useEffect(() => {
+  const token = Cookies.get('skanema_token')
+  const data  = Cookies.get('skanema_user')
+  if (token && data) {
+    try { 
+      setUser(JSON.parse(data)) 
+    } catch (_) {
+      // Cookie corrompu → on nettoie
+      Cookies.remove('skanema_token')
+      Cookies.remove('skanema_user')
     }
-    setLoading(false)
-  }, [])
+  }
+  setLoading(false)
+}, [])
+
+  
 
   const login = async (email, password) => {
     const res = await apiLogin(email, password)
