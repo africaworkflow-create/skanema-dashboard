@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
 export function middleware(request) {
-  const token = request.cookies.get('skanema_token')
+  const token = request.cookies.get('skanema_token')?.value
   const { pathname } = request.nextUrl
 
   // Si on accède au dashboard sans token → redirect login
