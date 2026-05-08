@@ -36,13 +36,22 @@ export function AuthProvider({ children }) {
   
 
   const login = async (email, password) => {
-    const res = await apiLogin(email, password)
-    const { token, data } = res.data
-    Cookies.set('skanema_token', token,               COOKIE_OPTIONS)
-    Cookies.set('skanema_user',  JSON.stringify(data), COOKIE_OPTIONS)
-    setUser(data)
-    return data
+  const res = await apiLogin(email, password)
+  const { token, data } = res.data
+  Cookies.set('skanema_token', token, COOKIE_OPTIONS)
+  Cookies.set('skanema_user', JSON.stringify(data), COOKIE_OPTIONS)
+  setUser(data)
+  
+  // Redirige vers dashboard.skanema.com en production
+  const isProd = window.location.hostname.includes('skanema.com')
+  if (isProd) {
+    window.location.href = 'https://dashboard.skanema.com'
+  } else {
+    window.location.href = '/dashboard'
   }
+  
+  return data
+}
 
   const logout = () => {
     Cookies.remove('skanema_token', { domain: isProd ? '.skanema.com' : undefined })
