@@ -5,6 +5,15 @@ import { login as apiLogin } from '@/lib/api'
 
 const AuthContext = createContext(null)
 
+const isProd = typeof window !== 'undefined' && window.location.hostname.includes('skanema.com')
+
+const COOKIE_OPTIONS = {
+  expires  : 7,
+  secure   : isProd,
+  sameSite : isProd ? 'None' : 'Lax',
+  domain   : isProd ? '.skanema.com' : undefined,
+}
+
 export function AuthProvider({ children }) {
   const [user,    setUser]    = useState(null)
   const [loading, setLoading] = useState(true)
@@ -21,15 +30,15 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     const res = await apiLogin(email, password)
     const { token, data } = res.data
-    Cookies.set('skanema_token', token, { expires: 7, secure: true, sameSite: 'strict' })
-    Cookies.set('skanema_user',  JSON.stringify(data), { expires: 7 })
+    Cookies.set('skanema_token', token,               COOKIE_OPTIONS)
+    Cookies.set('skanema_user',  JSON.stringify(data), COOKIE_OPTIONS)
     setUser(data)
     return data
   }
 
   const logout = () => {
-    Cookies.remove('skanema_token')
-    Cookies.remove('skanema_user')
+    Cookies.remove('skanema_token', { domain: isProd ? '.skanema.com' : undefined })
+    Cookies.remove('skanema_user',  { domain: isProd ? '.skanema.com' : undefined })
     setUser(null)
     window.location.href = '/login'
   }

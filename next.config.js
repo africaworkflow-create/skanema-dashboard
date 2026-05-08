@@ -8,6 +8,11 @@ const nextConfig = {
           has: [{ type: 'host', value: 'dashboard.skanema.com' }],
           destination: '/dashboard',
         },
+        {
+          source: '/dashboard',
+          has: [{ type: 'host', value: 'dashboard.skanema.com' }],
+          destination: '/dashboard',
+        },
       ],
     }
   },
