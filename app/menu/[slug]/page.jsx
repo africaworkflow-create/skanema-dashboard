@@ -123,7 +123,7 @@ function CartView({ cart, restaurant, onBack, onAdd, onRemove, onClear }) {
         slug,
         items: items.map(i => ({ menuItemId: i.id, quantity: i.qty }))
       }
-      const res  = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/public/order/create`, {
+      const res  = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.skanema.com'}/api/public/order/create`, {
         method : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body   : JSON.stringify(payload),
@@ -313,32 +313,31 @@ export default function MenuPage() {
   }, [cart, slug])
 
   const addToCart = useCallback((item) => {
-    setCart(prev => ({
-      ...prev,
-      [item._id]: {
-        id      : item._id,
-        name    : item.name,
-        price   : item.price,
-        imageUrl: item.imageUrl,
-        qty     : (prev[item._id]?.qty || 0) + 1,
-      }
-    }))
-  }, [])
+  const key = item._id || item.id
+  setCart(prev => ({
+    ...prev,
+    [key]: {
+      id      : key,
+      name    : item.name,
+      price   : item.price,
+      imageUrl: item.imageUrl,
+      qty     : (prev[key]?.qty || 0) + 1,
+    }
+  }))
+}, [])
 
-  const removeFromCart = useCallback((item) => {
-    setCart(prev => {
-      const current = prev[item._id || item.id]?.qty || 0
-      if (current <= 1) {
-        const next = { ...prev }
-        delete next[item._id || item.id]
-        return next
-      }
-      return {
-        ...prev,
-        [item._id || item.id]: { ...prev[item._id || item.id], qty: current - 1 }
-      }
-    })
-  }, [])
+const removeFromCart = useCallback((item) => {
+  const key = item._id || item.id
+  setCart(prev => {
+    const current = prev[key]?.qty || 0
+    if (current <= 1) {
+      const next = { ...prev }
+      delete next[key]
+      return next
+    }
+    return { ...prev, [key]: { ...prev[key], qty: current - 1 } }
+  })
+}, [])
 
   const cartCount = Object.values(cart).reduce((s, i) => s + i.qty, 0)
   const cartTotal = Object.values(cart).reduce((s, i) => s + i.price * i.qty, 0)
@@ -475,7 +474,7 @@ export default function MenuPage() {
               <DishCard
                 key={item._id}
                 item={item}
-                qty={cart[item._id]?.qty || 0}
+                qty={cart[item._id || item.id]?.qty || 0}
                 onAdd={addToCart}
                 onRemove={removeFromCart}
               />
