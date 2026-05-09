@@ -149,9 +149,9 @@ function CartView({ cart, restaurant, onBack, onAdd, onRemove, slug, sid }) {
           <p className="text-xs text-green-700 font-medium">💬 Vérifiez WhatsApp maintenant</p>
           <p className="text-xs text-green-600 mt-1">Votre code de commande a été envoyé automatiquement.</p>
         </div>
-        <button onClick={onBack} className="text-sm text-gray-400 underline">
-          Retour au menu
-        </button>
+        <p className="text-xs text-gray-400">
+          Pour une nouvelle commande, tapez <strong>menu</strong> sur WhatsApp.
+        </p>
       </div>
     )
   }
