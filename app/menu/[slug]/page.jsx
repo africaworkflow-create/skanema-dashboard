@@ -1,4 +1,5 @@
 'use client'
+import React from 'react'
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import {
@@ -110,18 +111,40 @@ function CartView({ cart, restaurant, onBack, onAdd, onRemove, onClear }) {
   const items    = Object.values(cart).filter(i => i.qty > 0)
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0)
 
-  const handleOrder = () => {
-    // Formate le message WhatsApp avec le récap du panier
-    const lines = items.map(i => `• ${i.name} ×${i.qty} — ${formatFCFA(i.price * i.qty)}`)
-    const msg =
-      `🛒 *Ma commande chez ${restaurant.name}*\n\n` +
-      lines.join('\n') +
-      `\n\n💰 Sous-total : *${formatFCFA(subtotal)}*\n\n` +
-      `_Envoyé depuis skanema.com_`
+  const [ordering, setOrdering] = React.useState(false)
+  const [orderError, setOrderError] = React.useState('')
 
-    const phone = restaurant.phone?.replace(/\D/g, '') || ''
-    const url   = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
-    window.open(url, '_blank')
+  const handleOrder = async () => {
+    setOrdering(true)
+    setOrderError('')
+    try {
+      // Crée la commande temporaire en base
+      const payload = {
+        slug,
+        items: items.map(i => ({ menuItemId: i.id, quantity: i.qty }))
+      }
+      const res  = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/public/order/create`, {
+        method : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body   : JSON.stringify(payload),
+      })
+      const data = await res.json()
+
+      if (!data.success) {
+        setOrderError(data.message || 'Erreur lors de la création de la commande.')
+        return
+      }
+
+      // Envoie uniquement le token sur WhatsApp
+      const phone = restaurant.phone?.replace(/\D/g, '') || ''
+      const url   = `https://wa.me/${phone}?text=${encodeURIComponent(data.token)}`
+      window.open(url, '_blank')
+
+    } catch (err) {
+      setOrderError('Erreur réseau. Veuillez réessayer.')
+    } finally {
+      setOrdering(false)
+    }
   }
 
   return (
@@ -208,21 +231,38 @@ function CartView({ cart, restaurant, onBack, onAdd, onRemove, onClear }) {
             </div>
           </div>
 
+          {orderError && (
+            <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 mb-3">
+              <p className="text-xs text-red-600 text-center">{orderError}</p>
+            </div>
+          )}
+
           <button
             onClick={handleOrder}
+            disabled={ordering}
             className="w-full py-4 rounded-2xl text-white font-bold text-base
-                       flex items-center justify-center gap-3 active:scale-[0.98] transition-all"
+                       flex items-center justify-center gap-3 active:scale-[0.98] transition-all
+                       disabled:opacity-70 disabled:cursor-not-allowed"
             style={{ background: '#075E54' }}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-            </svg>
-            Commander via WhatsApp
-            <ArrowRight size={18} />
+            {ordering ? (
+              <>
+                <Loader2 size={20} className="animate-spin" />
+                Préparation de la commande…
+              </>
+            ) : (
+              <>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                </svg>
+                Commander via WhatsApp
+                <ArrowRight size={18} />
+              </>
+            )}
           </button>
 
           <p className="text-center text-xs text-gray-400 mt-3">
-            Vous serez redirigé vers WhatsApp pour confirmer la livraison et payer via Wave
+            Vous serez redirigé vers WhatsApp pour finaliser la livraison et payer via Wave
           </p>
         </div>
       )}
@@ -272,32 +312,33 @@ export default function MenuPage() {
     sessionStorage.setItem(`skanema_cart_${slug}`, JSON.stringify(cart))
   }, [cart, slug])
 
-const addToCart = useCallback((item) => {
-  const key = item._id || item.id
-  setCart(prev => ({
-    ...prev,
-    [key]: {
-      id      : key,
-      name    : item.name,
-      price   : item.price,
-      imageUrl: item.imageUrl,
-      qty     : (prev[key]?.qty || 0) + 1,
-    }
-  }))
-}, [])
+  const addToCart = useCallback((item) => {
+    setCart(prev => ({
+      ...prev,
+      [item._id]: {
+        id      : item._id,
+        name    : item.name,
+        price   : item.price,
+        imageUrl: item.imageUrl,
+        qty     : (prev[item._id]?.qty || 0) + 1,
+      }
+    }))
+  }, [])
 
- const removeFromCart = useCallback((item) => {
-  const key = item._id || item.id
-  setCart(prev => {
-    const current = prev[key]?.qty || 0
-    if (current <= 1) {
-      const next = { ...prev }
-      delete next[key]
-      return next
-    }
-    return { ...prev, [key]: { ...prev[key], qty: current - 1 } }
-  })
-}, [])
+  const removeFromCart = useCallback((item) => {
+    setCart(prev => {
+      const current = prev[item._id || item.id]?.qty || 0
+      if (current <= 1) {
+        const next = { ...prev }
+        delete next[item._id || item.id]
+        return next
+      }
+      return {
+        ...prev,
+        [item._id || item.id]: { ...prev[item._id || item.id], qty: current - 1 }
+      }
+    })
+  }, [])
 
   const cartCount = Object.values(cart).reduce((s, i) => s + i.qty, 0)
   const cartTotal = Object.values(cart).reduce((s, i) => s + i.price * i.qty, 0)
@@ -434,7 +475,7 @@ const addToCart = useCallback((item) => {
               <DishCard
                 key={item._id}
                 item={item}
-                qty={cart[item._id || item.id]?.qty || 0}
+                qty={cart[item._id]?.qty || 0}
                 onAdd={addToCart}
                 onRemove={removeFromCart}
               />
