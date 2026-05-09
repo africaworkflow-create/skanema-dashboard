@@ -139,7 +139,7 @@ function CartView({ cart, restaurant, onBack, onAdd, onRemove, slug }) {
       // Envoie uniquement le token sur WhatsApp
       const phone = restaurant.phone?.replace(/\D/g, '') || ''
       const url   = `https://wa.me/${phone}?text=${encodeURIComponent(data.token)}`
-      window.open(url, '_blank')
+      window.location.href = url
 
     } catch (err) {
       setOrderError('Erreur réseau. Veuillez réessayer.')
