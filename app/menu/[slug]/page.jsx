@@ -1,23 +1,19 @@
 'use client'
-import React from 'react'
-import { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import {
-  ShoppingCart, Search, Star, Clock, ChevronLeft,
+  Search, Star, Clock, ChevronLeft,
   Plus, Minus, Trash2, ArrowRight, Loader2, MapPin
 } from 'lucide-react'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.skanema.com'
 
 function formatFCFA(n) {
   return new Intl.NumberFormat('fr-FR').format(Math.round(n)) + ' FCFA'
 }
 
-// ── Skeleton loading ─────────────────────────────────────────────
 function Skeleton({ className }) {
-  return (
-    <div className={`animate-pulse bg-gray-200 rounded-lg ${className}`} />
-  )
+  return <div className={`animate-pulse bg-gray-200 rounded-lg ${className}`} />
 }
 
 // ── Carte plat ───────────────────────────────────────────────────
@@ -33,7 +29,6 @@ function DishCard({ item, qty, onAdd, onRemove }) {
 
   return (
     <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 flex flex-col">
-      {/* Image */}
       <div className="relative overflow-hidden" style={{ height: '140px' }}>
         {!imgError && item.imageUrl ? (
           <img
@@ -45,34 +40,22 @@ function DishCard({ item, qty, onAdd, onRemove }) {
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-orange-50 to-amber-100
-                          flex items-center justify-center text-5xl">
-            🍽️
-          </div>
+                          flex items-center justify-center text-5xl">🍽️</div>
         )}
-        {/* Badge préparation */}
         <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm text-white
                         text-xs px-2 py-1 rounded-full flex items-center gap-1">
-          <Clock size={10} />
-          {item.preparationTime} min
+          <Clock size={10} />{item.preparationTime} min
         </div>
-        {/* Badge quantité dans panier */}
         {qty > 0 && (
           <div className="absolute top-2 left-2 bg-gray-900 text-white text-xs font-bold
-                          w-6 h-6 rounded-full flex items-center justify-center">
-            {qty}
-          </div>
+                          w-6 h-6 rounded-full flex items-center justify-center">{qty}</div>
         )}
       </div>
-
-      {/* Infos */}
       <div className="flex flex-col flex-1 p-3">
         <p className="text-sm font-semibold text-gray-900 leading-tight">{item.name}</p>
-        <p className="text-xs text-gray-400 mt-1 leading-relaxed flex-1 line-clamp-2">
-          {item.description}
-        </p>
+        <p className="text-xs text-gray-400 mt-1 leading-relaxed flex-1 line-clamp-2">{item.description}</p>
         <div className="flex items-center justify-between mt-3">
           <p className="text-sm font-bold text-gray-900">{formatFCFA(item.price)}</p>
-
           {qty === 0 ? (
             <button
               onClick={handleAdd}
@@ -106,25 +89,25 @@ function DishCard({ item, qty, onAdd, onRemove }) {
   )
 }
 
-// ── Vue panier ────────────────────────────────────────────────────
+// ── Vue panier ───────────────────────────────────────────────────
 function CartView({ cart, restaurant, onBack, onAdd, onRemove, slug, sid }) {
   const items    = Object.values(cart).filter(i => i.qty > 0)
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0)
 
-  const [ordering,     setOrdering]     = React.useState(false)
-  const [orderError,   setOrderError]   = React.useState('')
-  const [orderSuccess, setOrderSuccess] = React.useState(false)
+  const [ordering,     setOrdering]     = useState(false)
+  const [orderError,   setOrderError]   = useState('')
+  const [orderSuccess, setOrderSuccess] = useState(false)
 
   const handleOrder = async () => {
     setOrdering(true)
     setOrderError('')
     try {
-      // Crée la commande temporaire en base
       const payload = {
         slug,
+        sid : sid || null,
         items: items.map(i => ({ menuItemId: i.id, quantity: i.qty }))
       }
-      const res  = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/public/order/create`, {
+      const res  = await fetch(`${API_URL}/api/public/order/create`, {
         method : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body   : JSON.stringify(payload),
@@ -136,10 +119,14 @@ function CartView({ cart, restaurant, onBack, onAdd, onRemove, slug, sid }) {
         return
       }
 
-      // Envoie uniquement le token sur WhatsApp
-      const phone = restaurant.phone?.replace(/\D/g, '') || ''
-      const url   = `https://wa.me/${phone}?text=${encodeURIComponent(data.token)}`
-      window.open(url, '_blank')
+      if (data.sent) {
+        // WhatsApp envoyé automatiquement
+        setOrderSuccess(true)
+      } else {
+        // Fallback — redirection manuelle
+        const phone = restaurant.phone?.replace(/\D/g, '') || ''
+        window.location.href = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(data.token)
+      }
 
     } catch (err) {
       setOrderError('Erreur réseau. Veuillez réessayer.')
@@ -148,8 +135,29 @@ function CartView({ cart, restaurant, onBack, onAdd, onRemove, slug, sid }) {
     }
   }
 
+  // Écran de succès quand WhatsApp envoyé automatiquement
+  if (orderSuccess) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen px-8 text-center bg-white">
+        <div className="text-6xl mb-6">✅</div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Commande envoyée !</h2>
+        <p className="text-sm text-gray-500 leading-relaxed mb-6">
+          Vérifiez WhatsApp — le bot vous a envoyé votre commande automatiquement.
+          Confirmez la livraison et payez via Wave directement dans la conversation.
+        </p>
+        <div className="w-full max-w-xs bg-green-50 border border-green-100 rounded-2xl p-4 mb-6">
+          <p className="text-xs text-green-700 font-medium">💬 Vérifiez WhatsApp maintenant</p>
+          <p className="text-xs text-green-600 mt-1">Votre code de commande a été envoyé automatiquement.</p>
+        </div>
+        <button onClick={onBack} className="text-sm text-gray-400 underline">
+          Retour au menu
+        </button>
+      </div>
+    )
+  }
+
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3 flex-shrink-0">
         <button onClick={onBack} className="p-2 rounded-full hover:bg-gray-100 transition-colors">
@@ -162,12 +170,11 @@ function CartView({ cart, restaurant, onBack, onAdd, onRemove, slug, sid }) {
       </div>
 
       {/* Articles */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+      <div className="flex-1 px-4 py-4 space-y-3">
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="text-5xl mb-4">🛒</div>
             <p className="text-sm font-medium text-gray-700">Panier vide</p>
-            <p className="text-xs text-gray-400 mt-1">Ajoutez des plats pour commander</p>
             <button onClick={onBack} className="mt-4 text-sm font-medium text-gray-900
                                                border border-gray-200 px-4 py-2 rounded-xl">
               Voir le menu
@@ -177,18 +184,15 @@ function CartView({ cart, restaurant, onBack, onAdd, onRemove, slug, sid }) {
           <div key={item.id} className="bg-white rounded-2xl p-4 flex items-center gap-3
                                         border border-gray-100 shadow-sm">
             <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
-              {item.imageUrl ? (
-                <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-2xl">🍽️</div>
-              )}
+              {item.imageUrl
+                ? <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                : <div className="w-full h-full flex items-center justify-center text-2xl">🍽️</div>
+              }
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-gray-900 truncate">{item.name}</p>
               <p className="text-xs text-gray-400 mt-0.5">{formatFCFA(item.price)} / unité</p>
-              <p className="text-sm font-bold text-gray-900 mt-1">
-                {formatFCFA(item.price * item.qty)}
-              </p>
+              <p className="text-sm font-bold text-gray-900 mt-1">{formatFCFA(item.price * item.qty)}</p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <button
@@ -196,7 +200,9 @@ function CartView({ cart, restaurant, onBack, onAdd, onRemove, slug, sid }) {
                 className="w-8 h-8 rounded-full border-2 border-gray-200 flex items-center
                            justify-center active:scale-90 transition-all"
               >
-                {item.qty === 1 ? <Trash2 size={13} className="text-red-400" /> : <Minus size={13} className="text-gray-600" />}
+                {item.qty === 1
+                  ? <Trash2 size={13} className="text-red-400" />
+                  : <Minus size={13} className="text-gray-600" />}
               </button>
               <span className="text-sm font-bold text-gray-900 w-5 text-center">{item.qty}</span>
               <button
@@ -211,9 +217,9 @@ function CartView({ cart, restaurant, onBack, onAdd, onRemove, slug, sid }) {
         ))}
       </div>
 
-      {/* Résumé + bouton commande */}
+      {/* Résumé + bouton commander */}
       {items.length > 0 && (
-        <div className="bg-white border-t border-gray-100 px-4 pt-4 pb-6 flex-shrink-0">
+        <div className="bg-white border-t border-gray-100 px-4 pt-4 pb-8 flex-shrink-0">
           <div className="space-y-2 mb-4">
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Sous-total</span>
@@ -263,7 +269,10 @@ function CartView({ cart, restaurant, onBack, onAdd, onRemove, slug, sid }) {
           </button>
 
           <p className="text-center text-xs text-gray-400 mt-3">
-            Vous serez redirigé vers WhatsApp pour finaliser la livraison et payer via Wave
+            {sid
+              ? 'Votre commande sera envoyée automatiquement sur WhatsApp'
+              : 'Vous serez redirigé vers WhatsApp pour finaliser la livraison'
+            }
           </p>
         </div>
       )}
@@ -271,21 +280,21 @@ function CartView({ cart, restaurant, onBack, onAdd, onRemove, slug, sid }) {
   )
 }
 
-// ── Page principale ───────────────────────────────────────────────
+// ── Page principale ──────────────────────────────────────────────
 export default function MenuPage() {
-  const { slug }                        = useParams()
-  const searchParams                    = useSearchParams()
-  const sid                             = searchParams.get('sid')
-  const [restaurant, setRestaurant]     = useState(null)
-  const [menuItems,  setMenuItems]      = useState([])
-  const [loading,    setLoading]        = useState(true)
-  const [error,      setError]          = useState(null)
-  const [cart,       setCart]           = useState({})
-  const [search,     setSearch]         = useState('')
-  const [activecat,  setActiveCat]      = useState('Tous')
-  const [showCart,   setShowCart]       = useState(false)
+  const { slug }       = useParams()
+  const searchParams   = useSearchParams()
+  const sid            = searchParams.get('sid')
 
-  // Charge le restaurant + menu depuis l'API
+  const [restaurant, setRestaurant] = useState(null)
+  const [menuItems,  setMenuItems]  = useState([])
+  const [loading,    setLoading]    = useState(true)
+  const [error,      setError]      = useState(null)
+  const [cart,       setCart]       = useState({})
+  const [search,     setSearch]     = useState('')
+  const [activeCat,  setActiveCat]  = useState('Tous')
+  const [showCart,   setShowCart]   = useState(false)
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -305,71 +314,62 @@ export default function MenuPage() {
 
   // Panier persistant en sessionStorage
   useEffect(() => {
-    const saved = sessionStorage.getItem(`skanema_cart_${slug}`)
-    if (saved) {
-      try { setCart(JSON.parse(saved)) } catch (_) {}
-    }
+    const saved = sessionStorage.getItem('skanema_cart_' + slug)
+    if (saved) { try { setCart(JSON.parse(saved)) } catch (_) {} }
   }, [slug])
 
   useEffect(() => {
-    sessionStorage.setItem(`skanema_cart_${slug}`, JSON.stringify(cart))
+    sessionStorage.setItem('skanema_cart_' + slug, JSON.stringify(cart))
   }, [cart, slug])
 
+  // ── Panier — clé UNIQUE = item._id (toujours) ───────────────────
   const addToCart = useCallback((item) => {
+    // Supporte item venant de la grille (item._id) ou du panier (item.id)
+    const key = item._id || item.id
     setCart(prev => ({
       ...prev,
-      [item._id]: {
-        id      : item._id,
+      [key]: {
+        id      : key,
         name    : item.name,
         price   : item.price,
         imageUrl: item.imageUrl,
-        qty     : (prev[item._id]?.qty || 0) + 1,
+        qty     : (prev[key]?.qty || 0) + 1,
       }
     }))
   }, [])
 
   const removeFromCart = useCallback((item) => {
+    const key = item._id || item.id
     setCart(prev => {
-      const current = prev[item._id || item.id]?.qty || 0
+      const current = prev[key]?.qty || 0
       if (current <= 1) {
         const next = { ...prev }
-        delete next[item._id || item.id]
+        delete next[key]
         return next
       }
-      return {
-        ...prev,
-        [item._id || item.id]: { ...prev[item._id || item.id], qty: current - 1 }
-      }
+      return { ...prev, [key]: { ...prev[key], qty: current - 1 } }
     })
   }, [])
 
   const cartCount = Object.values(cart).reduce((s, i) => s + i.qty, 0)
   const cartTotal = Object.values(cart).reduce((s, i) => s + i.price * i.qty, 0)
 
-  // Catégories uniques
   const categories = ['Tous', ...new Set(menuItems.map(i => i.category).filter(Boolean))]
-
-  // Filtrage
-  const filtered = menuItems.filter(item => {
-    const matchCat    = activecat === 'Tous' || item.category === activecat
-    const matchSearch = !search || item.name.toLowerCase().includes(search.toLowerCase())
-    return matchCat && matchSearch && item.available
-  })
+  const filtered   = menuItems.filter(item =>
+    (activeCat === 'Tous' || item.category === activeCat) &&
+    (!search || item.name.toLowerCase().includes(search.toLowerCase())) &&
+    item.available
+  )
 
   if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="bg-white px-4 py-5 border-b border-gray-100">
-        <Skeleton className="h-6 w-40 mb-2" />
-        <Skeleton className="h-4 w-56" />
-      </div>
-      <div className="p-4 grid grid-cols-2 gap-3">
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="grid grid-cols-2 gap-3 mt-4">
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="bg-white rounded-2xl overflow-hidden">
             <Skeleton className="h-36 w-full rounded-none" />
             <div className="p-3 space-y-2">
               <Skeleton className="h-4 w-3/4" />
               <Skeleton className="h-3 w-full" />
-              <Skeleton className="h-4 w-1/2" />
             </div>
           </div>
         ))}
@@ -386,17 +386,15 @@ export default function MenuPage() {
   )
 
   if (showCart) return (
-    <div className="min-h-screen bg-gray-50 flex flex-col" style={{ maxWidth: '480px', margin: '0 auto' }}>
-      <CartView
-        cart={cart}
-        restaurant={restaurant}
-        onBack={() => setShowCart(false)}
-        onAdd={addToCart}
-        onRemove={removeFromCart}
-        slug={slug}
-        sid={sid}
-      />
-    </div>
+    <CartView
+      cart={cart}
+      restaurant={restaurant}
+      onBack={() => setShowCart(false)}
+      onAdd={addToCart}
+      onRemove={removeFromCart}
+      slug={slug}
+      sid={sid}
+    />
   )
 
   return (
@@ -409,25 +407,20 @@ export default function MenuPage() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-lg font-bold text-gray-900">{restaurant?.name}</h1>
-                <span className="text-xs bg-green-50 text-green-700 font-medium px-2 py-0.5 rounded-full">
-                  Ouvert
-                </span>
+                <span className="text-xs bg-green-50 text-green-700 font-medium px-2 py-0.5 rounded-full">Ouvert</span>
               </div>
               <p className="text-xs text-gray-400 mt-1">{restaurant?.address || 'Dakar, Sénégal'}</p>
               <div className="flex items-center gap-3 mt-2">
                 <span className="text-xs text-gray-500 flex items-center gap-1">
-                  <Star size={11} className="text-yellow-400 fill-yellow-400" /> 4.8 (127 avis)
+                  <Star size={11} className="text-yellow-400 fill-yellow-400" /> 4.8
                 </span>
                 <span className="text-gray-200">·</span>
                 <span className="text-xs text-gray-500 flex items-center gap-1">
-                  <Clock size={11} /> 30 – 45 min
+                  <Clock size={11} /> 30–45 min
                 </span>
               </div>
             </div>
-            <div className="w-14 h-14 rounded-2xl bg-orange-50 flex items-center justify-center
-                            text-3xl flex-shrink-0">
-              🏠
-            </div>
+            <div className="w-14 h-14 rounded-2xl bg-orange-50 flex items-center justify-center text-3xl flex-shrink-0">🏠</div>
           </div>
         </div>
 
@@ -439,25 +432,19 @@ export default function MenuPage() {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Rechercher un plat…"
-              className="w-full bg-gray-100 rounded-xl pl-9 pr-4 py-2.5 text-sm text-gray-700
-                         outline-none placeholder-gray-400"
+              className="w-full bg-gray-100 rounded-xl pl-9 pr-4 py-2.5 text-sm text-gray-700 outline-none"
             />
           </div>
         </div>
 
         {/* Catégories */}
-        <div className="flex gap-2 px-4 pb-3 overflow-x-auto"
-             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <div className="flex gap-2 px-4 pb-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
           {categories.map(cat => (
             <button
               key={cat}
               onClick={() => setActiveCat(cat)}
-              className={`whitespace-nowrap text-xs font-medium px-3 py-1.5 rounded-full
-                         transition-all flex-shrink-0 ${
-                activecat === cat
-                  ? 'bg-gray-900 text-white'
-                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-              }`}
+              className={`whitespace-nowrap text-xs font-medium px-3 py-1.5 rounded-full transition-all flex-shrink-0
+                         ${activeCat === cat ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500'}`}
             >
               {cat}
             </button>
@@ -466,12 +453,11 @@ export default function MenuPage() {
       </div>
 
       {/* Grille plats */}
-      <div className="flex-1 overflow-y-auto px-4 py-4">
+      <div className="flex-1 px-4 py-4">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="text-4xl mb-3">🔍</div>
             <p className="text-sm font-medium text-gray-700">Aucun plat trouvé</p>
-            <p className="text-xs text-gray-400 mt-1">Essayez une autre recherche</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">
@@ -492,18 +478,16 @@ export default function MenuPage() {
       {/* Barre panier flottante */}
       {cartCount > 0 && (
         <div className="fixed bottom-0 left-0 right-0 px-4 pb-6 pt-2"
-             style={{ maxWidth: '480px', margin: '0 auto', left: '50%', transform: 'translateX(-50%)', right: 'auto', width: '100%' }}>
+             style={{ maxWidth: '480px', left: '50%', transform: 'translateX(-50%)', width: '100%' }}>
           <button
             onClick={() => setShowCart(true)}
             className="w-full text-white py-4 rounded-2xl font-bold text-sm
                        flex items-center justify-between px-5 shadow-lg active:scale-[0.98] transition-all"
             style={{ background: '#075E54' }}
           >
-            <div className="bg-white/20 rounded-lg px-2 py-1 text-xs font-bold">
-              {cartCount}
-            </div>
+            <div className="bg-white/20 rounded-lg px-2 py-1 text-xs font-bold">{cartCount}</div>
             <span>Voir mon panier</span>
-            <span className="font-bold">{formatFCFA(cartTotal)}</span>
+            <span>{formatFCFA(cartTotal)}</span>
           </button>
         </div>
       )}
