@@ -107,7 +107,8 @@ function DishCard({ item, qty, onAdd, onRemove }) {
 }
 
 // ── Vue panier ────────────────────────────────────────────────────
-function CartView({ cart, restaurant, onBack, onAdd, onRemove, onClear }) {
+function CartView({ cart, restaurant, onBack, onAdd, onRemove, slug }) {
+    
   const items    = Object.values(cart).filter(i => i.qty > 0)
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0)
 
@@ -390,6 +391,7 @@ const removeFromCart = useCallback((item) => {
         onAdd={addToCart}
         onRemove={removeFromCart}
         onClear={() => setCart({})}
+        slug={slug}
       />
     </div>
   )
