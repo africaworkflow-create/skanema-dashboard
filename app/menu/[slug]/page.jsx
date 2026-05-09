@@ -135,22 +135,64 @@ function CartView({ cart, restaurant, onBack, onAdd, onRemove, slug, sid }) {
     }
   }
 
-  // Écran de succès quand WhatsApp envoyé automatiquement
+  // Écran de succès animé
   if (orderSuccess) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen px-8 text-center bg-white">
-        <div className="text-6xl mb-6">✅</div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">Commande envoyée !</h2>
-        <p className="text-sm text-gray-500 leading-relaxed mb-6">
+      <div className="flex flex-col items-center justify-center min-h-screen px-8 text-center bg-white"
+           style={{ animation: 'fadeIn 0.4s ease' }}>
+        <style>{`
+          @keyframes fadeIn   { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:translateY(0) } }
+          @keyframes scaleIn  { 0% { transform:scale(0) } 60% { transform:scale(1.2) } 100% { transform:scale(1) } }
+          @keyframes drawRing { from { stroke-dashoffset: 220 } to { stroke-dashoffset: 0 } }
+          @keyframes drawCheck{ from { stroke-dashoffset: 80  } to { stroke-dashoffset: 0 } }
+          .anim-1 { animation: fadeIn 0.5s ease 0.1s both }
+          .anim-2 { animation: fadeIn 0.5s ease 0.3s both }
+          .anim-3 { animation: fadeIn 0.5s ease 0.5s both }
+          .anim-4 { animation: fadeIn 0.5s ease 0.7s both }
+        `}</style>
+
+        {/* Checkmark animé SVG */}
+        <div style={{ animation: 'scaleIn 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both' }} className="mb-6">
+          <svg width="90" height="90" viewBox="0 0 90 90">
+            <circle
+              cx="45" cy="45" r="35"
+              fill="none" stroke="#dcfce7" strokeWidth="10"
+            />
+            <circle
+              cx="45" cy="45" r="35"
+              fill="none" stroke="#16a34a" strokeWidth="4"
+              strokeDasharray="220" strokeDashoffset="220"
+              strokeLinecap="round"
+              style={{ animation: 'drawRing 0.6s ease 0.2s forwards' }}
+            />
+            <polyline
+              points="28,45 40,57 62,33"
+              fill="none" stroke="#16a34a" strokeWidth="5"
+              strokeLinecap="round" strokeLinejoin="round"
+              strokeDasharray="80" strokeDashoffset="80"
+              style={{ animation: 'drawCheck 0.4s ease 0.7s forwards' }}
+            />
+          </svg>
+        </div>
+
+        <h2 className="text-xl font-bold text-gray-900 mb-2 anim-1">
+          Commande envoyée !
+        </h2>
+
+        <p className="text-sm text-gray-500 leading-relaxed mb-6 anim-2">
           Vérifiez WhatsApp — le bot vous a envoyé votre commande automatiquement.
           Confirmez la livraison et payez via Wave directement dans la conversation.
         </p>
-        <div className="w-full max-w-xs bg-green-50 border border-green-100 rounded-2xl p-4 mb-6">
-          <p className="text-xs text-green-700 font-medium">💬 Vérifiez WhatsApp maintenant</p>
+
+        <div className="w-full max-w-xs bg-green-50 border border-green-100 rounded-2xl p-4 mb-6 anim-3"
+             style={{ boxShadow: '0 0 0 0 rgba(22,163,74,0.4)', animation: 'fadeIn 0.5s ease 0.5s both, pulse 2s ease 1s infinite' }}>
+          <style>{`@keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(22,163,74,0)} 50%{box-shadow:0 0 0 8px rgba(22,163,74,0.1)} }`}</style>
+          <p className="text-sm font-semibold text-green-700">💬 Vérifiez WhatsApp maintenant</p>
           <p className="text-xs text-green-600 mt-1">Votre code de commande a été envoyé automatiquement.</p>
         </div>
-        <p className="text-xs text-gray-400">
-          Pour une nouvelle commande, tapez <strong>menu</strong> sur WhatsApp.
+
+        <p className="text-xs text-gray-400 anim-4">
+          Pour une nouvelle commande, tapez <strong className="text-gray-600">menu</strong> sur WhatsApp.
         </p>
       </div>
     )
