@@ -427,8 +427,14 @@ function OnboardingContent() {
         return
       }
       // Stocke le token JWT
+      // Efface les anciens cookies avant d'écrire les nouveaux
       const isProd = window.location.hostname.includes('skanema.com')
-      const opts   = { expires:7, secure:isProd, sameSite:isProd?'None':'Lax', domain:isProd?'.skanema.com':undefined }
+      const domain = isProd ? '.skanema.com' : undefined
+      Cookies.remove('skanema_token', { domain })
+      Cookies.remove('skanema_user',  { domain })
+
+      // Stocke le nouveau token JWT
+      const opts = { expires:7, secure:isProd, sameSite:isProd?'None':'Lax', domain }
       Cookies.set('skanema_token', data.token, opts)
       Cookies.set('skanema_user',  JSON.stringify(data.data), opts)
       setStep(3)
