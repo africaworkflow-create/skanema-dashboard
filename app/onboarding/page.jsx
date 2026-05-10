@@ -1,7 +1,7 @@
 'use client'
 import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowRight, ArrowLeft, Loader2, Eye, EyeOff, AlertTriangle, Zap, CheckCircle2 } from 'lucide-react'
+import { ArrowRight, ArrowLeft, Loader2, Eye, EyeOff, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import Cookies from 'js-cookie'
 import Link from 'next/link'
 
@@ -12,14 +12,14 @@ const PLANS = [
     id      : 'basic',
     name    : 'Basic',
     price   : 15000,
-    features: ['10 plats', 'Bot WhatsApp', 'Paiement Wave', '1 zone de livraison'],
+    features: ['10 plats au menu', 'Bot WhatsApp', 'Paiement Wave', '1 zone de livraison'],
   },
   {
     id      : 'pro',
     name    : 'Pro',
     price   : 35000,
     popular : true,
-    features: ['25 plats', 'Bot WhatsApp', 'Stats avancées', '3 zones de livraison'],
+    features: ['25 plats au menu', 'Bot WhatsApp', 'Statistiques avancées', '3 zones de livraison'],
   },
   {
     id      : 'premium',
@@ -31,22 +31,40 @@ const PLANS = [
 
 function fmt(n) { return new Intl.NumberFormat('fr-FR').format(n) + ' FCFA' }
 
-// Input sans zoom iOS — font-size 16px obligatoire
-function Input({ type = 'text', value, onChange, onKeyDown, placeholder, className = '', children, ...rest }) {
+// ── Indicateur force mot de passe — 3 segments ───────────────────
+function PasswordStrength({ password }) {
+  if (!password) return null
+
+  const s1 = password.length >= 8
+  const s2 = s1 && /[A-Z]/.test(password) && /[a-z]/.test(password)
+  const s3 = s2 && /[0-9]/.test(password)
+
+  const score = s3 ? 3 : s2 ? 2 : s1 ? 1 : 0
+
+  const levels = {
+    0: { color: '#e5e7eb', label: '' },
+    1: { color: '#ef4444', label: 'Faible — 8 caractères minimum' },
+    2: { color: '#f97316', label: 'Moyen — ajoutez une majuscule et un chiffre' },
+    3: { color: '#16a34a', label: 'Fort — mot de passe sécurisé' },
+  }
+  const { color, label } = levels[score]
+
   return (
-    <div className="relative">
-      <input
-        type={type}
-        value={value}
-        onChange={onChange}
-        onKeyDown={onKeyDown}
-        placeholder={placeholder}
-        style={{ fontSize: '16px' }}
-        className={`w-full border border-gray-200 rounded-xl px-4 py-3.5 outline-none
-                   focus:border-gray-400 transition-colors placeholder-gray-300 ${className}`}
-        {...rest}
-      />
-      {children}
+    <div className="mt-2.5 space-y-1.5">
+      <div className="flex gap-1.5">
+        {[1, 2, 3].map(i => (
+          <div
+            key={i}
+            className="h-1.5 flex-1 rounded-full transition-all duration-300"
+            style={{ background: i <= score ? color : '#e5e7eb' }}
+          />
+        ))}
+      </div>
+      {label && (
+        <p className="text-xs font-medium transition-all duration-300" style={{ color }}>
+          {label}
+        </p>
+      )}
     </div>
   )
 }
@@ -65,18 +83,15 @@ function OnboardingContent() {
 
   const plan = PLANS.find(p => p.id === selectedPlan) || PLANS[1]
 
-  // Force du mot de passe — 3 barres gauche → droite
-  const passStrength = [
-    form.password.length >= 8,
-    /[A-Z]/.test(form.password) && /[a-z]/.test(form.password),
-    /[0-9]/.test(form.password),
-  ]
+  const passOk = form.password.length >= 8 &&
+                 /[A-Z]/.test(form.password) && /[a-z]/.test(form.password) &&
+                 /[0-9]/.test(form.password)
 
   const handleSubmit = async () => {
-    if (!form.name.trim())  { setError('Le nom du restaurant est requis.');  return }
-    if (!form.email.trim()) { setError('L\'email est requis.');              return }
+    if (!form.name.trim())  { setError('Le nom du restaurant est requis.');   return }
+    if (!form.email.trim()) { setError('L\'email est requis.');               return }
     if (!form.phone.trim()) { setError('Le numéro de téléphone est requis.'); return }
-    if (!passStrength.every(Boolean)) {
+    if (!passOk) {
       setError('Mot de passe : 8 caractères minimum, une majuscule, une minuscule et un chiffre.')
       return
     }
@@ -121,14 +136,16 @@ function OnboardingContent() {
   return (
     <div className="min-h-screen bg-white flex flex-col lg:flex-row">
 
-      {/* ── Panneau gauche branding — desktop uniquement ── */}
+      {/* ── Panneau gauche — desktop uniquement ── */}
       <div className="hidden lg:flex lg:w-[42%] bg-gray-900 flex-col justify-between p-12 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24" />
 
         <div className="flex items-center gap-2.5 relative">
           <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center">
-            <Zap size={18} className="text-gray-900" />
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
           </div>
           <span className="text-white text-lg font-semibold">Skanema</span>
         </div>
@@ -150,9 +167,9 @@ function OnboardingContent() {
 
         <div className="grid grid-cols-3 gap-4 relative">
           {[
-            { value: '50+',    label: 'Restaurants'  },
-            { value: '2 400+', label: 'Commandes'    },
-            { value: '99.9%',  label: 'Disponibilité'},
+            { value: '50+',    label: 'Restaurants'   },
+            { value: '2 400+', label: 'Commandes'     },
+            { value: '99.9%',  label: 'Disponibilité' },
           ].map((s, i) => (
             <div key={i} className="bg-white/5 rounded-xl p-3 text-center">
               <p className="text-white font-bold text-lg">{s.value}</p>
@@ -166,24 +183,16 @@ function OnboardingContent() {
       <div className="flex-1 flex flex-col items-center justify-center px-5 py-10 lg:px-16">
         <div className="w-full max-w-md">
 
-          {/* Logo mobile */}
-          <div className="flex items-center gap-2 mb-8 lg:hidden">
-            <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
-              <Zap size={15} className="text-white" />
-            </div>
-            <span className="text-gray-900 text-base font-semibold">Skanema</span>
-          </div>
-
           {/* Indicateur étapes */}
           <div className="flex items-center gap-2 mb-8">
             {[
-              { n: 1, label: 'Votre plan'  },
-              { n: 2, label: 'Votre compte'},
+              { n: 1, label: 'Votre plan'   },
+              { n: 2, label: 'Votre compte' },
             ].map((s, i) => (
               <div key={s.n} className="flex items-center gap-2">
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
-                  s.n < step  ? 'bg-green-500 text-white' :
-                  s.n === step ? 'bg-gray-900 text-white' :
+                  s.n < step   ? 'bg-green-500 text-white' :
+                  s.n === step ? 'bg-gray-900 text-white'  :
                                  'bg-gray-100 text-gray-400'
                 }`}>
                   {s.n < step ? <CheckCircle2 size={13} /> : s.n}
@@ -199,7 +208,7 @@ function OnboardingContent() {
           {/* ── ÉTAPE 1 — Plan ── */}
           {step === 1 && (
             <div style={{ animation: 'fadeUp 0.3s ease both' }}>
-              <style>{`@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`}</style>
+              <style>{`@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
               <h1 className="text-2xl font-bold text-gray-900 mb-1">Choisissez votre plan</h1>
               <p className="text-sm text-gray-400 mb-6">
@@ -214,44 +223,34 @@ function OnboardingContent() {
                       key={p.id}
                       onClick={() => setSelectedPlan(p.id)}
                       className={`w-full text-left rounded-2xl border-2 p-4 transition-all duration-200 ${
-                        active && p.popular  ? 'border-gray-900 bg-gray-900' :
-                        active               ? 'border-gray-900 bg-gray-50'  :
-                                               'border-gray-100 bg-white hover:border-gray-200'
+                        active ? 'border-gray-900 bg-white' : 'border-gray-100 bg-white hover:border-gray-200'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-2.5">
                         <div className="flex items-center gap-2">
-                          <p className={`font-bold ${active && p.popular ? 'text-white' : 'text-gray-900'}`}>
-                            {p.name}
-                          </p>
+                          <p className="text-sm font-bold text-gray-900">{p.name}</p>
                           {p.popular && (
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                              active ? 'bg-white/20 text-white' : 'bg-gray-900 text-white'
-                            }`}>
-                              ⭐ Populaire
+                            <span className="text-xs bg-gray-900 text-white px-2 py-0.5 rounded-full font-medium">
+                              Populaire
                             </span>
                           )}
                         </div>
                         <div className="flex items-center gap-2.5">
-                          <span className={`font-bold ${active && p.popular ? 'text-white' : 'text-gray-900'}`}>
+                          <span className="font-bold text-gray-900">
                             {fmt(p.price)}
-                            <span className={`text-xs font-normal ml-1 ${active && p.popular ? 'text-white/60' : 'text-gray-400'}`}>
-                              /mois
-                            </span>
+                            <span className="text-xs font-normal text-gray-400 ml-1">/mois</span>
                           </span>
-                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                            active ? 'border-white bg-white' : 'border-gray-300'
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                            active ? 'border-gray-900 bg-gray-900' : 'border-gray-300'
                           }`}>
-                            {active && <div className="w-2.5 h-2.5 rounded-full bg-gray-900" />}
+                            {active && <div className="w-2 h-2 rounded-full bg-white" />}
                           </div>
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-x-3 gap-y-1">
                         {p.features.map((f, i) => (
-                          <span key={i} className={`text-xs flex items-center gap-1 ${
-                            active && p.popular ? 'text-white/70' : 'text-gray-400'
-                          }`}>
-                            <CheckCircle2 size={10} /> {f}
+                          <span key={i} className="text-xs text-gray-400 flex items-center gap-1">
+                            <CheckCircle2 size={10} className="text-gray-300" /> {f}
                           </span>
                         ))}
                       </div>
@@ -274,96 +273,92 @@ function OnboardingContent() {
           {/* ── ÉTAPE 2 — Compte ── */}
           {step === 2 && (
             <div style={{ animation: 'fadeUp 0.3s ease both' }}>
-              <style>{`@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`}</style>
+              <style>{`@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
               <h1 className="text-2xl font-bold text-gray-900 mb-1">Créez votre compte</h1>
               <p className="text-sm text-gray-400 mb-6">
                 Plan <span className="font-semibold text-gray-700">{plan.name}</span> · {fmt(plan.price)}/mois
-                <button onClick={() => setStep(1)} className="text-gray-400 hover:text-gray-600 underline ml-2 text-xs">
+                <button onClick={() => { setStep(1); setError('') }}
+                        className="text-gray-400 hover:text-gray-600 underline ml-2 text-xs">
                   Changer
                 </button>
               </p>
 
               <div className="space-y-4">
 
-                {/* Nom */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Nom du restaurant *</label>
-                  <Input
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                    Nom du restaurant *
+                  </label>
+                  <input
+                    autoFocus
                     value={form.name}
                     onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                     onKeyDown={e => e.key === 'Enter' && handleSubmit()}
                     placeholder="Ex: Chez Fatou, Le Pélican…"
-                    autoFocus
+                    style={{ fontSize: '16px' }}
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3.5 outline-none
+                               focus:border-gray-400 transition-colors placeholder-gray-300"
                   />
                 </div>
 
-                {/* Téléphone */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Numéro de téléphone *</label>
-                  <Input
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                    Numéro de téléphone *
+                  </label>
+                  <input
                     type="tel"
                     value={form.phone}
                     onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                     onKeyDown={e => e.key === 'Enter' && handleSubmit()}
                     placeholder="221 77 123 45 67"
+                    style={{ fontSize: '16px' }}
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3.5 outline-none
+                               focus:border-gray-400 transition-colors placeholder-gray-300"
                   />
                   <p className="text-xs text-gray-400 mt-1">
                     Pour recevoir vos notifications de commandes sur WhatsApp.
                   </p>
                 </div>
 
-                {/* Email */}
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1.5">Email *</label>
-                  <Input
+                  <input
                     type="email"
                     value={form.email}
                     onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                     onKeyDown={e => e.key === 'Enter' && handleSubmit()}
                     placeholder="vous@email.com"
+                    style={{ fontSize: '16px' }}
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3.5 outline-none
+                               focus:border-gray-400 transition-colors placeholder-gray-300"
                   />
                 </div>
 
-                {/* Mot de passe */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Mot de passe *</label>
-                  <Input
-                    type={showPass ? 'text' : 'password'}
-                    value={form.password}
-                    onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                    onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                    placeholder="Min. 8 car. avec majuscule et chiffre"
-                    className="pr-10"
-                  >
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                    Mot de passe *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPass ? 'text' : 'password'}
+                      value={form.password}
+                      onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                      onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                      placeholder="Min. 8 caractères"
+                      style={{ fontSize: '16px' }}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3.5 pr-11 outline-none
+                                 focus:border-gray-400 transition-colors placeholder-gray-300"
+                    />
                     <button
                       type="button"
                       onClick={() => setShowPass(!showPass)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
                     >
                       {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
-                  </Input>
-
-                  {/* Indicateur force — gauche → droite */}
-                  {form.password.length > 0 && (
-                    <div className="mt-2 space-y-1">
-                      <div className="flex gap-1.5">
-                        {passStrength.map((ok, i) => (
-                          <div
-                            key={i}
-                            className="h-1 flex-1 rounded-full transition-all duration-300"
-                            style={{ background: ok ? (i === 0 ? '#f59e0b' : i === 1 ? '#3b82f6' : '#10b981') : '#e5e7eb' }}
-                          />
-                        ))}
-                      </div>
-                      <p className="text-xs text-gray-400">
-                        {passStrength.every(Boolean) ? '✅ Mot de passe fort' :
-                         passStrength[0] ? '⚠️ Ajoutez une majuscule et un chiffre' :
-                         '⚠️ Trop court'}
-                      </p>
-                    </div>
-                  )}
+                  </div>
+                  <PasswordStrength password={form.password} />
                 </div>
 
                 {error && (
