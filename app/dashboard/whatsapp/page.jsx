@@ -1,54 +1,90 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Toggle } from '@/components/ui/Toggle'
 import { Loader2, CheckCircle2, MessageCircle, Webhook, Key, Wifi, WifiOff } from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
+import api from '@/lib/api'
 
 export default function WhatsAppPage() {
-  const [status,  setStatus]  = useState('connected')
+  const { user }              = useAuth()
   const [saving,  setSaving]  = useState(false)
   const [saved,   setSaved]   = useState(false)
+  const [loading, setLoading] = useState(true)
   const [form,    setForm]    = useState({
-    phoneNumberId: '617864204737769',
-    accessToken  : '••••••••••••••••••••',
-    verifyToken  : 'skanema_verify_2026',
+    phoneNumberId: '',
+    accessToken  : '',
+    verifyToken  : '',
     apiVersion   : 'v19.0',
   })
 
-  const handleSave = () => {
+  // Statut bot — actif seulement si phoneNumberId n'est pas PENDING_ ou A_CONFIGURER
+  const isConfigured = form.phoneNumberId &&
+    !form.phoneNumberId.startsWith('PENDING_') &&
+    form.phoneNumberId !== 'A_CONFIGURER'
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await api.get('/api/auth/me')
+        const d   = res.data.data
+        setForm({
+          phoneNumberId: d.whatsappPhoneNumberId || '',
+          accessToken  : '',
+          verifyToken  : d.whatsappVerifyToken   || '',
+          apiVersion   : d.whatsappApiVersion    || 'v19.0',
+        })
+      } catch (_) {}
+      finally { setLoading(false) }
+    }
+    load()
+  }, [])
+
+  const handleSave = async () => {
     setSaving(true)
-    setTimeout(() => {
-      setSaving(false)
+    try {
+      await api.patch('/api/auth/whatsapp', {
+        phoneNumberId: form.phoneNumberId,
+        accessToken  : form.accessToken || undefined,
+        verifyToken  : form.verifyToken,
+        apiVersion   : form.apiVersion,
+      })
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
-    }, 900)
+    } catch (_) {}
+    finally { setSaving(false) }
   }
 
+  const webhookUrl = `https://api.skanema.com/webhook/whatsapp`
+
+  if (loading) return (
+    <DashboardLayout title="Configuration WhatsApp" subtitle="Gérez votre connexion à WhatsApp Cloud API">
+      <div className="flex justify-center py-20">
+        <Loader2 size={22} className="animate-spin text-gray-300" />
+      </div>
+    </DashboardLayout>
+  )
+
   return (
-    <DashboardLayout
-      title="Configuration WhatsApp"
-      subtitle="Gérez votre connexion à WhatsApp Cloud API"
-    >
+    <DashboardLayout title="Configuration WhatsApp" subtitle="Gérez votre connexion à WhatsApp Cloud API">
       <div className="max-w-2xl space-y-5">
 
         {/* Statut connexion */}
         <div className={`flex items-center gap-3 p-4 rounded-xl border ${
-          status === 'connected'
-            ? 'bg-green-50 border-green-100'
-            : 'bg-red-50 border-red-100'
+          isConfigured ? 'bg-green-50 border-green-100' : 'bg-amber-50 border-amber-100'
         }`}>
-          {status === 'connected'
+          {isConfigured
             ? <Wifi size={18} className="text-green-600 flex-shrink-0" />
-            : <WifiOff size={18} className="text-red-500 flex-shrink-0" />
+            : <WifiOff size={18} className="text-amber-500 flex-shrink-0" />
           }
           <div>
-            <p className={`text-sm font-medium ${status === 'connected' ? 'text-green-800' : 'text-red-700'}`}>
-              {status === 'connected' ? 'Bot connecté et actif' : 'Bot déconnecté'}
+            <p className={`text-sm font-medium ${isConfigured ? 'text-green-800' : 'text-amber-700'}`}>
+              {isConfigured ? 'Bot configuré et actif' : 'Bot en attente de configuration'}
             </p>
-            <p className={`text-xs mt-0.5 ${status === 'connected' ? 'text-green-600' : 'text-red-500'}`}>
-              {status === 'connected'
+            <p className={`text-xs mt-0.5 ${isConfigured ? 'text-green-600' : 'text-amber-600'}`}>
+              {isConfigured
                 ? 'Votre numéro WhatsApp reçoit et répond aux messages.'
-                : 'Vérifiez vos credentials et la configuration du webhook.'
+                : 'Notre équipe Skanema va configurer votre bot sous 24h.'
               }
             </p>
           </div>
@@ -62,17 +98,17 @@ export default function WhatsAppPage() {
           </div>
 
           {[
-            { key: 'phoneNumberId', label: 'Phone Number ID', type: 'text',     placeholder: '617864204737769' },
-            { key: 'accessToken',   label: 'Access Token',    type: 'password', placeholder: 'EAAxxxxxx' },
-            { key: 'verifyToken',   label: 'Verify Token',    type: 'text',     placeholder: 'mon_token_secret' },
-            { key: 'apiVersion',    label: 'Version API',     type: 'text',     placeholder: 'v19.0' },
+            { key: 'phoneNumberId', label: 'Phone Number ID', type: 'text',     placeholder: '617864204737769', show: true },
+            { key: 'accessToken',   label: 'Access Token',    type: 'password', placeholder: 'Laisser vide pour ne pas changer', show: true },
+            { key: 'verifyToken',   label: 'Verify Token',    type: 'text',     placeholder: 'mon_token_secret', show: true },
+            { key: 'apiVersion',    label: 'Version API',     type: 'text',     placeholder: 'v19.0', show: true },
           ].map(field => (
             <div key={field.key}>
               <label className="block text-xs font-medium text-gray-700 mb-1.5">{field.label}</label>
               <input
                 type={field.type}
                 value={form[field.key]}
-                onChange={e => setForm(f => ({...f, [field.key]: e.target.value}))}
+                onChange={e => setForm(f => ({ ...f, [field.key]: e.target.value }))}
                 placeholder={field.placeholder}
                 className="input font-mono text-xs"
               />
@@ -80,8 +116,8 @@ export default function WhatsAppPage() {
           ))}
 
           <button onClick={handleSave} disabled={saving} className="btn-primary flex items-center gap-2">
-            {saving  ? <Loader2 size={13} className="animate-spin" /> : null}
-            {saved   ? <><CheckCircle2 size={13} /> Enregistré !</> : 'Enregistrer'}
+            {saving ? <Loader2 size={13} className="animate-spin" /> : null}
+            {saved  ? <><CheckCircle2 size={13} /> Enregistré !</> : 'Enregistrer'}
           </button>
         </div>
 
@@ -94,8 +130,8 @@ export default function WhatsAppPage() {
           <p className="text-xs text-gray-400">
             Copiez cette URL dans votre dashboard Meta → WhatsApp → Configuration → Webhooks.
           </p>
-          <div className="bg-gray-50 border border-gray-100 rounded-lg px-3 py-2.5 font-mono text-xs text-gray-700 break-all">
-            {process.env.NEXT_PUBLIC_API_URL || 'https://votre-domaine.com'}/webhook/whatsapp
+          <div className="bg-gray-50 border border-gray-100 rounded-lg px-3 py-2.5 font-mono text-xs text-gray-700 break-all select-all">
+            {webhookUrl}
           </div>
           <div className="grid grid-cols-2 gap-3 text-xs text-gray-500 bg-gray-50 rounded-lg p-3">
             <div>
@@ -107,34 +143,6 @@ export default function WhatsAppPage() {
               <p className="font-medium text-gray-700">subscribe</p>
             </div>
           </div>
-        </div>
-
-        {/* Carrousel template */}
-        <div className="bg-white border border-gray-100 rounded-xl p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <MessageCircle size={15} className="text-gray-400" />
-              <h2 className="text-sm font-semibold text-gray-900">Template Carrousel</h2>
-            </div>
-            <span className="text-2xs bg-amber-50 text-amber-600 border border-amber-100 px-2 py-0.5 rounded-full font-medium">
-              En attente approbation
-            </span>
-          </div>
-          <p className="text-xs text-gray-400">
-            Le carrousel natif WhatsApp nécessite un template approuvé par Meta (~24h).
-          </p>
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1.5">Nom du template</label>
-            <input className="input" placeholder="skanema_menu_carousel" defaultValue="" />
-          </div>
-          <div className="flex items-center justify-between py-1">
-            <div>
-              <p className="text-sm font-medium text-gray-900">Activer le carrousel</p>
-              <p className="text-xs text-gray-400">Une fois le template approuvé par Meta</p>
-            </div>
-            <Toggle checked={false} onChange={() => {}} />
-          </div>
-          <button className="btn-ghost text-xs py-2">Soumettre le template à Meta</button>
         </div>
       </div>
     </DashboardLayout>
