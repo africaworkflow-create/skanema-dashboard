@@ -41,13 +41,18 @@ function PasswordStrength({ password }) {
 
   const score = s3 ? 3 : s2 ? 2 : s1 ? 1 : 0
 
-  const levels = {
-    0: { color: '#e5e7eb', label: '' },
-    1: { color: '#ef4444', label: 'Faible — 8 caractères minimum' },
-    2: { color: '#f97316', label: 'Moyen — ajoutez une majuscule et un chiffre' },
-    3: { color: '#16a34a', label: 'Fort — mot de passe sécurisé' },
+  const missing = []
+  if (!s1) missing.push('8 caractères minimum')
+  if (s1 && !s2) {
+    if (!/[A-Z]/.test(password)) missing.push('une majuscule')
+    if (!/[a-z]/.test(password)) missing.push('une minuscule')
   }
-  const { color, label } = levels[score]
+  if (s2 && !s3) missing.push('un chiffre')
+
+  const color = score === 0 ? '#e5e7eb' : score === 1 ? '#ef4444' : score === 2 ? '#f97316' : '#16a34a'
+  const label = score === 0 ? '' :
+                score === 3 ? 'Fort — mot de passe sécurisé' :
+                'Ajoutez ' + missing.join(' et ')
 
   return (
     <div className="mt-2.5 space-y-1.5">
