@@ -2,9 +2,11 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
+import { useState, useEffect } from 'react'
+import api from '@/lib/api'
 import {
   LayoutDashboard, ShoppingBag, UtensilsCrossed, BarChart3,
-  MapPin, MessageCircle, Settings, LogOut, X, Wifi
+  MapPin, MessageCircle, Settings, LogOut, X, Wifi, WifiOff
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -42,7 +44,19 @@ function NavItem({ href, label, icon: Icon, onClick }) {
 }
 
 export function Sidebar({ open, onClose }) {
-  const { user, logout } = useAuth()
+  const { user, logout }    = useAuth()
+  const [botActive, setBotActive] = useState(false)
+
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const res = await api.get('/api/auth/me')
+        const pid = res.data.data?.whatsappPhoneNumberId
+        setBotActive(pid && !pid.startsWith('PENDING_') && pid !== 'A_CONFIGURER')
+      } catch (_) {}
+    }
+    check()
+  }, [])
 
   return (
     <>
@@ -110,16 +124,13 @@ export function Sidebar({ open, onClose }) {
                 {user?.plan || 'basic'}
               </span>
             </div>
-            {(() => {
-              const pid = user?.whatsappPhoneNumberId
-              const ok  = pid && !pid.startsWith('PENDING_') && pid !== 'A_CONFIGURER'
-              return (
-                <div className="flex items-center gap-1.5">
-                  <Wifi size={12} className={ok ? 'text-green-500' : 'text-gray-300'} />
-                  <span className="text-2xs text-gray-400">{ok ? 'Bot actif' : 'Bot en attente'}</span>
-                </div>
-              )
-            })()}
+            <div className="flex items-center gap-1.5">
+              {botActive
+                ? <Wifi size={12} className="text-green-500" />
+                : <WifiOff size={12} className="text-gray-300" />
+              }
+              <span className="text-2xs text-gray-400">{botActive ? 'Bot actif' : 'Bot en attente'}</span>
+            </div>
           </div>
           <button
             onClick={logout}

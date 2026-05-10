@@ -2,7 +2,9 @@
 import { useState, useEffect } from 'react'
 import { CheckCircle2, Circle, ChevronRight, X, Zap } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
-import { getMenu, getOrders } from '@/lib/api'
+import api from '@/lib/api'
+import { getMenu, getOrders, getZones } from '@/lib/api'
+import api from '@/lib/api'
 
 const STEPS = [
   {
@@ -36,7 +38,7 @@ const STEPS = [
     done   : false,
     link   : null,
     cta    : 'Contacter Skanema →',
-    ctaHref: 'https://wa.me/221784632103?text=Bonjour%20Skanema%2C%20je%20souhaite%20activer%20mon%20bot%20WhatsApp.',
+    ctaHref: 'https://wa.me/221778075388?text=Bonjour%20Skanema%2C%20je%20souhaite%20activer%20mon%20bot%20WhatsApp.',
     external: true,
   },
 ]
@@ -55,40 +57,32 @@ export function SetupChecklist() {
 
     const check = async () => {
       try {
-        const [menuRes, ordersRes] = await Promise.allSettled([
+        const [menuRes, ordersRes, meRes, zonesRes] = await Promise.allSettled([
           getMenu(),
           getOrders({ limit: 1 }),
+          api.get('/api/auth/me'),
+          getZones(),
         ])
 
-        const hasMenu   = menuRes.status === 'fulfilled'   && menuRes.value.data.count > 0
-        const hasOrders = ordersRes.status === 'fulfilled' && ordersRes.value.data.total > 0
-        const hasWA     = user?.whatsappPhoneNumberId &&
-                          !user.whatsappPhoneNumberId?.startsWith('PENDING_') &&
-                          user.whatsappPhoneNumberId !== 'A_CONFIGURER'
+        const hasMenu = menuRes.status === 'fulfilled' && menuRes.value.data.count > 0
 
-        // Vérifie les zones via une requête dédiée
-        // Zones configurées = position GPS différente de la position par défaut
-// ET au moins une zone active
-let hasZones = false
-try {
-  const { getZones } = await import('@/lib/api')
-  const zonesRes  = await getZones()
-  const zones     = zonesRes.data.zones || []
-  const location  = zonesRes.data.location
-  const hasCustomPos = location &&
-    !(Math.abs(location.latitude - 14.6937) < 0.001 &&
-      Math.abs(location.longitude - (-17.4441)) < 0.001)
-  const hasActiveZone = zones.some(z => z.active)
-  hasZones = hasCustomPos && hasActiveZone
-} catch (_) {}
+        const pid   = meRes.status === 'fulfilled' ? meRes.value.data.data?.whatsappPhoneNumberId : null
+        const hasWA = pid && !pid.startsWith('PENDING_') && pid !== 'A_CONFIGURER'
+
+        const zones    = zonesRes.status === 'fulfilled' ? zonesRes.value.data.zones || [] : []
+        const location = zonesRes.status === 'fulfilled' ? zonesRes.value.data.location : null
+        const hasCustomPos = location &&
+          !(Math.abs(location.latitude - 14.6937) < 0.001 &&
+            Math.abs(location.longitude - (-17.4441)) < 0.001)
+        const hasZones = hasCustomPos && zones.some(z => z.active)
 
         setSteps(prev => prev.map(s => ({
-        ...s,
-        done: s.id === 'account'  ? true      :
-              s.id === 'menu'     ? hasMenu   :
-              s.id === 'zones'    ? hasZones  :
-              s.id === 'whatsapp' ? hasWA     : false,
-              })))
+          ...s,
+          done: s.id === 'account'  ? true     :
+                s.id === 'menu'     ? hasMenu  :
+                s.id === 'zones'    ? hasZones :
+                s.id === 'whatsapp' ? hasWA    : false,
+        })))
       } catch (_) {}
       finally { setLoading(false) }
     }
