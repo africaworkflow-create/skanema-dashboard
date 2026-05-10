@@ -1,53 +1,91 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Toggle } from '@/components/ui/Toggle'
 import { AddressSearch } from '@/components/ui/AddressSearch'
 import { formatFCFA } from '@/lib/utils'
 import { MapPin, Plus, Pencil, Trash2, X, Loader2, AlertTriangle, Info, CheckCircle2 } from 'lucide-react'
-
-const INITIAL_ZONES = [
-  { id:'1', name:'Zone A — Centre',          radiusKm:3,  fee:1000, active:true },
-  { id:'2', name:'Zone B — Banlieue proche', radiusKm:7,  fee:2000, active:true },
-  { id:'3', name:'Zone C — Grande banlieue', radiusKm:15, fee:3000, active:true },
-]
+import { getZones, updateZones } from '@/lib/api'
 
 export default function ZonesPage() {
-  const [zones,    setZones]    = useState(INITIAL_ZONES)
-  const [modal,    setModal]    = useState(false)
-  const [editing,  setEditing]  = useState(null)
-  const [form,     setForm]     = useState({ name:'', radiusKm:'', fee:'' })
+  const [zones,    setZones]    = useState([])
+  const [position, setPosition] = useState({ latitude: 14.6937, longitude: -17.4441 })
+  const [loading,  setLoading]  = useState(true)
   const [saving,   setSaving]   = useState(false)
   const [savedPos, setSavedPos] = useState(false)
+  const [modal,    setModal]    = useState(false)
+  const [editing,  setEditing]  = useState(null)
+  const [form,     setForm]     = useState({ name: '', radiusKm: '', fee: '', active: true })
   const [error,    setError]    = useState('')
-  const [position, setPosition] = useState({ latitude:14.6937, longitude:-17.4441 })
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await getZones()
+        setZones(res.data.zones || [])
+        if (res.data.location) setPosition(res.data.location)
+      } catch (_) {}
+      finally { setLoading(false) }
+    }
+    load()
+  }, [])
+
+  const saveZones = async (newZones) => {
+    try { await updateZones({ zones: newZones }) } catch (_) {}
+  }
 
   const openCreate = () => {
-    setEditing(null); setForm({ name:'', radiusKm:'', fee:'' }); setError(''); setModal(true)
-  }
-  const openEdit = (z) => {
-    setEditing(z); setForm({ name:z.name, radiusKm:String(z.radiusKm), fee:String(z.fee) }); setError(''); setModal(true)
+    setEditing(null); setForm({ name: '', radiusKm: '', fee: '', active: true }); setError(''); setModal(true)
   }
 
-  const handleSave = () => {
+  const openEdit = (z, i) => {
+    setEditing(i); setForm({ name: z.name, radiusKm: String(z.radiusKm), fee: String(z.fee), active: z.active }); setError(''); setModal(true)
+  }
+
+  const handleSave = async () => {
     if (!form.name.trim() || !form.radiusKm || !form.fee) { setError('Tous les champs sont obligatoires.'); return }
     setSaving(true)
-    setTimeout(() => {
-      if (editing) {
-        setZones(prev => prev.map(z => z.id === editing.id
-          ? { ...z, name:form.name, radiusKm:Number(form.radiusKm), fee:Number(form.fee) } : z
-        ))
-      } else {
-        setZones(prev => [...prev, { id:String(Date.now()), name:form.name, radiusKm:Number(form.radiusKm), fee:Number(form.fee), active:true }])
-      }
-      setSaving(false); setModal(false)
-    }, 600)
+    let newZones
+    if (editing !== null) {
+      newZones = zones.map((z, i) => i === editing
+        ? { ...z, name: form.name, radiusKm: Number(form.radiusKm), fee: Number(form.fee), active: form.active }
+        : z
+      )
+    } else {
+      newZones = [...zones, { name: form.name, radiusKm: Number(form.radiusKm), fee: Number(form.fee), active: true }]
+    }
+    await saveZones(newZones)
+    setZones(newZones)
+    setSaving(false); setModal(false)
   }
 
-  const handleSavePosition = () => {
-    setSaving(true)
-    setTimeout(() => { setSaving(false); setSavedPos(true); setTimeout(() => setSavedPos(false), 2500) }, 700)
+  const handleDelete = async (i) => {
+    const newZones = zones.filter((_, idx) => idx !== i)
+    await saveZones(newZones)
+    setZones(newZones)
   }
+
+  const handleToggle = async (i) => {
+    const newZones = zones.map((z, idx) => idx === i ? { ...z, active: !z.active } : z)
+    await saveZones(newZones)
+    setZones(newZones)
+  }
+
+  const handleSavePosition = async () => {
+    setSaving(true)
+    try {
+      await updateZones({ latitude: position.latitude, longitude: position.longitude })
+      setSavedPos(true)
+      setTimeout(() => setSavedPos(false), 2500)
+    } catch (_) {}
+    finally { setSaving(false) }
+  }
+
+  if (loading) return (
+    <DashboardLayout title="Zones de livraison" subtitle="Configurez vos zones et tarifs">
+      <div className="flex justify-center py-20"><Loader2 size={22} className="animate-spin text-gray-300" /></div>
+    </DashboardLayout>
+  )
 
   return (
     <DashboardLayout
@@ -72,9 +110,15 @@ export default function ZonesPage() {
         {/* Zones */}
         <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
           {zones.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-10">Aucune zone configurée.</p>
+            <div className="flex flex-col items-center justify-center py-10 text-center px-4">
+              <MapPin size={24} className="text-gray-200 mb-3" />
+              <p className="text-sm text-gray-400">Aucune zone configurée</p>
+              <button onClick={openCreate} className="mt-3 text-xs text-gray-900 font-medium underline">
+                Ajouter votre première zone
+              </button>
+            </div>
           ) : zones.map((zone, i) => (
-            <div key={zone.id} className={`flex items-center gap-4 px-5 py-4 ${i < zones.length-1 ? 'border-b border-gray-50':''}`}>
+            <div key={i} className={`flex items-center gap-4 px-5 py-4 ${i < zones.length-1 ? 'border-b border-gray-50' : ''}`}>
               <div className="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0">
                 <MapPin size={16} className="text-gray-400" />
               </div>
@@ -83,30 +127,27 @@ export default function ZonesPage() {
                 <p className="text-xs text-gray-400 mt-0.5">Jusqu'à {zone.radiusKm} km · {formatFCFA(zone.fee)}</p>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <Toggle checked={zone.active} onChange={() => setZones(prev => prev.map(z => z.id===zone.id ? {...z,active:!z.active} : z))} />
-                <button onClick={() => openEdit(zone)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"><Pencil size={14}/></button>
-                <button onClick={() => setZones(prev => prev.filter(z => z.id!==zone.id))} className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"><Trash2 size={14}/></button>
+                <Toggle checked={zone.active} onChange={() => handleToggle(i)} />
+                <button onClick={() => openEdit(zone, i)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"><Pencil size={14}/></button>
+                <button onClick={() => handleDelete(i)} className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"><Trash2 size={14}/></button>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Position restaurant avec AddressSearch */}
+        {/* Position restaurant */}
         <div className="bg-white border border-gray-100 rounded-xl p-5 space-y-4">
           <div>
             <p className="text-sm font-semibold text-gray-900 mb-0.5">Position du restaurant</p>
-            <p className="text-xs text-gray-400">Point de départ pour le calcul des distances de livraison.</p>
+            <p className="text-xs text-gray-400">Point de départ pour le calcul des distances.</p>
           </div>
           <AddressSearch
             latitude={position.latitude}
             longitude={position.longitude}
             onSelect={({ latitude, longitude }) => setPosition({ latitude, longitude })}
           />
-          <button
-            onClick={handleSavePosition}
-            disabled={saving}
-            className="btn-primary flex items-center gap-2 text-xs py-2"
-          >
+          <button onClick={handleSavePosition} disabled={saving}
+            className="btn-primary flex items-center gap-2 text-xs py-2">
             {saving    ? <Loader2 size={12} className="animate-spin" /> : null}
             {savedPos  ? <><CheckCircle2 size={12}/> Position enregistrée !</> : 'Enregistrer la position'}
           </button>
@@ -118,7 +159,7 @@ export default function ZonesPage() {
         <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-sm p-6">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-base font-semibold text-gray-900">{editing ? 'Modifier la zone' : 'Nouvelle zone'}</h2>
+              <h2 className="text-base font-semibold text-gray-900">{editing !== null ? 'Modifier la zone' : 'Nouvelle zone'}</h2>
               <button onClick={() => setModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400"><X size={15}/></button>
             </div>
             <div className="space-y-4">
@@ -144,7 +185,7 @@ export default function ZonesPage() {
                 <button onClick={() => setModal(false)} className="btn-ghost flex-1">Annuler</button>
                 <button onClick={handleSave} disabled={saving} className="btn-primary flex-1 flex items-center justify-center gap-2">
                   {saving && <Loader2 size={13} className="animate-spin"/>}
-                  {editing ? 'Modifier' : 'Ajouter'}
+                  {editing !== null ? 'Modifier' : 'Ajouter'}
                 </button>
               </div>
             </div>
