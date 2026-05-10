@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { CheckCircle2, ArrowRight, ArrowLeft, Loader2, Eye, EyeOff, AlertTriangle, Zap } from 'lucide-react'
 import Cookies from 'js-cookie'
@@ -377,7 +377,7 @@ function StepSuccess({ restaurantName, plan }) {
 }
 
 // ── Page principale ──────────────────────────────────────────────
-export default function OnboardingPage() {
+function OnboardingContent() {
   const router       = useRouter()
   const searchParams = useSearchParams()
   const initPlan     = searchParams.get('plan') || ''
@@ -521,5 +521,17 @@ export default function OnboardingPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <Loader2 size={24} className="animate-spin text-gray-400" />
+      </div>
+    }>
+      <OnboardingContent />
+    </Suspense>
   )
 }
