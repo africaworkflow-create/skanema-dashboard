@@ -36,7 +36,7 @@ const STEPS = [
     done   : false,
     link   : null,
     cta    : 'Contacter Skanema →',
-    ctaHref: 'https://wa.me/221778075388?text=Bonjour%20Skanema%2C%20je%20souhaite%20activer%20mon%20bot%20WhatsApp.',
+    ctaHref: 'https://wa.me/221784632103?text=Bonjour%20Skanema%2C%20je%20souhaite%20activer%20mon%20bot%20WhatsApp.',
     external: true,
   },
 ]
@@ -62,15 +62,25 @@ export function SetupChecklist() {
 
         const hasMenu   = menuRes.status === 'fulfilled'   && menuRes.value.data.count > 0
         const hasOrders = ordersRes.status === 'fulfilled' && ordersRes.value.data.total > 0
-        const hasWA     = user?.whatsappPhoneNumberId && user.whatsappPhoneNumberId !== 'A_CONFIGURER'
+        const hasWA     = user?.whatsappPhoneNumberId &&
+                          !user.whatsappPhoneNumberId?.startsWith('PENDING_') &&
+                          user.whatsappPhoneNumberId !== 'A_CONFIGURER'
+
+        // Vérifie les zones via une requête dédiée
+        let hasZones = false
+        try {
+          const { getZones } = await import('@/lib/api')
+          const zonesRes = await getZones()
+          hasZones = (zonesRes.data.zones || []).length > 0
+        } catch (_) {}
 
         setSteps(prev => prev.map(s => ({
-          ...s,
-          done: s.id === 'account'  ? true     :
-                s.id === 'menu'     ? hasMenu  :
-                s.id === 'zones'    ? false     :
-                s.id === 'whatsapp' ? hasWA    : false,
-        })))
+        ...s,
+        done: s.id === 'account'  ? true      :
+              s.id === 'menu'     ? hasMenu   :
+              s.id === 'zones'    ? hasZones  :
+              s.id === 'whatsapp' ? hasWA     : false,
+              })))
       } catch (_) {}
       finally { setLoading(false) }
     }

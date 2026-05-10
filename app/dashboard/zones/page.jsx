@@ -72,6 +72,7 @@ export default function ZonesPage() {
   }
 
   const handleSavePosition = async () => {
+    console.log('Position à sauvegarder:', position)
     setSaving(true)
     try {
       await updateZones({ latitude: position.latitude, longitude: position.longitude })
