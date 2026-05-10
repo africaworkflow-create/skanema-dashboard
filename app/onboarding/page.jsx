@@ -57,7 +57,7 @@ function ProgressBar({ step, total }) {
 function StepPlan({ selected, onSelect, onNext }) {
   return (
     <div>
-      <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Étape 1 sur 3</p>
+      <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Étape 1 sur 2</p>
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Choisissez votre plan</h1>
       <p className="text-sm text-gray-400 mb-6">Pas de carte bancaire requise. Paiement Wave à l'activation.</p>
 
@@ -121,7 +121,7 @@ function StepAccount({ plan, form, setForm, onNext, onBack, loading, error }) {
 
   return (
     <div>
-      <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Étape 2 sur 3</p>
+      <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Étape 2 sur 2</p>
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Créez votre compte</h1>
       <p className="text-sm text-gray-400 mb-6">Plan <strong className="text-gray-700">{plan?.name}</strong> — {formatFCFA(plan?.price || 0)}/mois</p>
 
@@ -399,8 +399,9 @@ function OnboardingContent() {
       setError('Nom, email et mot de passe sont obligatoires.')
       return
     }
-    if (account.password.length < 8) {
-      setError('Le mot de passe doit contenir au moins 8 caractères.')
+    const passRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
+    if (!passRegex.test(account.password)) {
+      setError('Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule et un chiffre.')
       return
     }
     setLoading(true)
@@ -427,17 +428,15 @@ function OnboardingContent() {
         return
       }
       // Stocke le token JWT
-      // Efface les anciens cookies avant d'écrire les nouveaux
       const isProd = window.location.hostname.includes('skanema.com')
+      const opts   = { expires:7, secure:isProd, sameSite:isProd?'None':'Lax', domain:isProd?'.skanema.com':undefined }
+      // Efface les anciens cookies avant d'écrire les nouveaux
       const domain = isProd ? '.skanema.com' : undefined
       Cookies.remove('skanema_token', { domain })
       Cookies.remove('skanema_user',  { domain })
-
-      // Stocke le nouveau token JWT
-      const opts = { expires:7, secure:isProd, sameSite:isProd?'None':'Lax', domain }
       Cookies.set('skanema_token', data.token, opts)
       Cookies.set('skanema_user',  JSON.stringify(data.data), opts)
-      setStep(3)
+      setDone(true)
     } catch (_) {
       setError('Erreur réseau. Vérifiez votre connexion.')
     } finally {
@@ -493,7 +492,7 @@ function OnboardingContent() {
           <span className="text-base font-semibold text-gray-900">Skanema</span>
         </div>
 
-        <ProgressBar step={step} total={3} />
+        <ProgressBar step={step} total={2} />
 
         {step === 1 && (
           <StepPlan

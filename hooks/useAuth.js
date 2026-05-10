@@ -5,57 +5,36 @@ import { login as apiLogin } from '@/lib/api'
 
 const AuthContext = createContext(null)
 
-const isProd = typeof window !== 'undefined' && window.location.hostname.includes('skanema.com')
-
-const COOKIE_OPTIONS = {
-  expires  : 7,
-  secure   : isProd,
-  sameSite : isProd ? 'None' : 'Lax',
-  domain   : isProd ? '.skanema.com' : undefined,
-}
-
 export function AuthProvider({ children }) {
   const [user,    setUser]    = useState(null)
   const [loading, setLoading] = useState(true)
 
- useEffect(() => {
-  const token = Cookies.get('skanema_token')
-  const data  = Cookies.get('skanema_user')
-  if (token && data) {
-    try { 
-      setUser(JSON.parse(data)) 
-    } catch (_) {
-      // Cookie corrompu → on nettoie
-      Cookies.remove('skanema_token')
-      Cookies.remove('skanema_user')
+  useEffect(() => {
+    const token = Cookies.get('skanema_token')
+    const data  = Cookies.get('skanema_user')
+    if (token && data) {
+      try { setUser(JSON.parse(data)) } catch (_) {}
     }
-  }
-  setLoading(false)
-}, [])
-
-  
+    setLoading(false)
+  }, [])
 
   const login = async (email, password) => {
-  const res = await apiLogin(email, password)
-  const { token, data } = res.data
-  Cookies.set('skanema_token', token, COOKIE_OPTIONS)
-  Cookies.set('skanema_user', JSON.stringify(data), COOKIE_OPTIONS)
-  setUser(data)
-  
-  // Redirige vers dashboard.skanema.com en production
-  const isProd = window.location.hostname.includes('skanema.com')
-  if (isProd) {
-    window.location.href = 'https://dashboard.skanema.com'
-  } else {
-    window.location.href = '/dashboard'
+    const res = await apiLogin(email, password)
+    const { token, data } = res.data
+    Cookies.set('skanema_token', token, { expires: 7, secure: true, sameSite: 'strict' })
+    Cookies.set('skanema_user',  JSON.stringify(data), { expires: 7 })
+    setUser(data)
+    return data
   }
-  
-  return data
-}
 
   const logout = () => {
-    Cookies.remove('skanema_token', { domain: isProd ? '.skanema.com' : undefined })
-    Cookies.remove('skanema_user',  { domain: isProd ? '.skanema.com' : undefined })
+    const domains = ['.skanema.com', 'skanema.com', 'dashboard.skanema.com', undefined]
+    domains.forEach(domain => {
+      Cookies.remove('skanema_token', { domain, path: '/' })
+      Cookies.remove('skanema_user',  { domain, path: '/' })
+    })
+    document.cookie = 'skanema_token=;expires=Thu, 01 Jan 1970 00:00:00 GMT;domain=.skanema.com;path=/'
+    document.cookie = 'skanema_user=;expires=Thu, 01 Jan 1970 00:00:00 GMT;domain=.skanema.com;path=/'
     setUser(null)
     window.location.href = '/login'
   }

@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { SetupBanner } from '@/components/ui/SetupBanner'
 import { MetricCard } from '@/components/ui/MetricCard'
 import { Badge } from '@/components/ui/Badge'
 import { getStats, getOrders } from '@/lib/api'
@@ -95,6 +96,7 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="space-y-5">
+        <SetupBanner />
 
           {/* Métriques */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
