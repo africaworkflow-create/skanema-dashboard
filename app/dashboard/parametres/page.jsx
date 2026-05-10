@@ -118,9 +118,7 @@ export default function ParametresPage() {
                   readOnly
                   className="input bg-gray-50 text-gray-400 cursor-not-allowed flex-1"
                 />
-                <span className="text-xs text-gray-400 whitespace-nowrap">
-                  🔒 Non modifiable
-                </span>
+                
               </div>
               <p className="text-xs text-gray-400 mt-1">
                 Pour modifier votre numéro, contactez{' '}
