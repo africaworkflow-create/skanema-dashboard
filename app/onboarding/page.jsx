@@ -131,7 +131,8 @@ function OnboardingContent() {
       })
       Cookies.set('skanema_token', data.token,                opts)
       Cookies.set('skanema_user',  JSON.stringify(data.data), opts)
-      router.push('/dashboard')
+      // Force un rechargement complet pour que le middleware lise le cookie
+      window.location.href = '/dashboard'
     } catch (_) {
       setError('Erreur réseau. Vérifiez votre connexion.')
     } finally {
