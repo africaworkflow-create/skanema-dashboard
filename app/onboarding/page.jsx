@@ -3,6 +3,7 @@ import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowRight, ArrowLeft, Loader2, Eye, EyeOff, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import Cookies from 'js-cookie'
+import { PhoneInput } from '@/components/ui/PhoneInput'
 import Link from 'next/link'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.skanema.com'
@@ -84,7 +85,7 @@ function OnboardingContent() {
   const [error,        setError]        = useState('')
   const [showPass,     setShowPass]     = useState(false)
   const [selectedPlan, setSelectedPlan] = useState(initPlan)
-  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' })
+  const [form, setForm] = useState({ name: '', email: '', phone: '', dialCode: '221', password: '' })
 
   const plan = PLANS.find(p => p.id === selectedPlan) || PLANS[1]
 
@@ -311,15 +312,10 @@ function OnboardingContent() {
                   <label className="block text-xs font-medium text-gray-700 mb-1.5">
                     Numéro de téléphone *
                   </label>
-                  <input
-                    type="tel"
+                  <PhoneInput
                     value={form.phone}
-                    onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                    onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                    placeholder="221 77 123 45 67"
-                    style={{ fontSize: '16px' }}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3.5 outline-none
-                               focus:border-gray-400 transition-colors placeholder-gray-300"
+                    onChange={(full, dial, local) => setForm(f => ({ ...f, phone: full, dialCode: dial }))}
+                    style={{ minHeight: '52px' }}
                   />
                   <p className="text-xs text-gray-400 mt-1">
                     Pour recevoir vos notifications de commandes sur WhatsApp.
