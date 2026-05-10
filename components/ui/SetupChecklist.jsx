@@ -2,9 +2,7 @@
 import { useState, useEffect } from 'react'
 import { CheckCircle2, Circle, ChevronRight, X, Zap } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
-import api from '@/lib/api'
-import { getMenu, getOrders, getZones } from '@/lib/api'
-import api from '@/lib/api'
+import api, { getMenu, getOrders, getZones } from '@/lib/api'
 
 const STEPS = [
   {
