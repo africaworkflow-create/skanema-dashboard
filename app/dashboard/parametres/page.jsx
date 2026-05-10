@@ -17,6 +17,9 @@ export default function ParametresPage() {
   const [resto,   setResto]   = useState({ name: '', phone: '', address: '' })
   const [password, setPassword] = useState({ current: '', next: '', confirm: '' })
   const [passErr,  setPassErr]  = useState('')
+  const [notifs,   setNotifs]   = useState({ newOrder: true, payment: true, dailySummary: false })
+  const [savingNotifs, setSavingNotifs] = useState(false)
+  const [savedNotifs,  setSavedNotifs]  = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -28,6 +31,7 @@ export default function ParametresPage() {
           phone  : d.phone          || '',
           address: d.address        || '',
         })
+        if (d.notifications) setNotifs(d.notifications)
       } catch (_) {}
       finally { setLoading(false) }
     }
@@ -44,10 +48,24 @@ export default function ParametresPage() {
     finally { setSaving(false) }
   }
 
+  const handleSaveNotifs = async () => {
+    setSavingNotifs(true)
+    try {
+      await api.patch('/api/auth/notifications', notifs)
+      setSavedNotifs(true)
+      setTimeout(() => setSavedNotifs(false), 2500)
+    } catch (_) {}
+    finally { setSavingNotifs(false) }
+  }
+
   const handleChangePass = async () => {
     if (!password.current || !password.next) { setPassErr('Remplissez tous les champs.'); return }
     if (password.next !== password.confirm)   { setPassErr('Les mots de passe ne correspondent pas.'); return }
-    if (password.next.length < 8)             { setPassErr('Minimum 8 caractères.'); return }
+    const passRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
+    if (!passRegex.test(password.next)) {
+      setPassErr('Mot de passe : 8 caractères minimum, une majuscule, une minuscule et un chiffre.')
+      return
+    }
     setPassErr('')
     setSaving(true)
     try {
@@ -118,7 +136,9 @@ export default function ParametresPage() {
                   readOnly
                   className="input bg-gray-50 text-gray-400 cursor-not-allowed flex-1"
                 />
-                
+                <span className="text-xs text-gray-400 whitespace-nowrap">
+                  🔒 Non modifiable
+                </span>
               </div>
               <p className="text-xs text-gray-400 mt-1">
                 Pour modifier votre numéro, contactez{' '}
@@ -173,18 +193,27 @@ export default function ParametresPage() {
           <div className="bg-white border border-gray-100 rounded-xl p-5 space-y-4">
             <h2 className="text-sm font-semibold text-gray-900">Préférences de notifications</h2>
             {[
-              { label: 'Nouvelle commande',  desc: 'Recevoir un message WhatsApp à chaque commande', default: true  },
-              { label: 'Paiement confirmé',  desc: 'Notification quand un paiement Wave est validé',  default: true  },
-              { label: 'Résumé quotidien',   desc: 'Bilan du jour envoyé à 22h',                     default: false },
-            ].map((notif, i) => (
-              <div key={i} className="flex items-center justify-between py-1">
+              { key: 'newOrder',     label: 'Nouvelle commande payée', desc: 'Recevoir un message WhatsApp à chaque commande confirmée par Wave' },
+              { key: 'payment',      label: 'Paiement confirmé',       desc: 'Notification quand un paiement Wave est validé' },
+              { key: 'dailySummary', label: 'Résumé quotidien',        desc: 'Bilan du jour envoyé à 22h sur WhatsApp' },
+            ].map((notif) => (
+              <div key={notif.key} className="flex items-center justify-between py-1">
                 <div>
                   <p className="text-sm font-medium text-gray-900">{notif.label}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{notif.desc}</p>
                 </div>
-                <input type="checkbox" defaultChecked={notif.default} className="w-4 h-4 rounded accent-gray-900 cursor-pointer" />
+                <input
+                  type="checkbox"
+                  checked={notifs[notif.key]}
+                  onChange={e => setNotifs(n => ({ ...n, [notif.key]: e.target.checked }))}
+                  className="w-4 h-4 rounded accent-gray-900 cursor-pointer"
+                />
               </div>
             ))}
+            <button onClick={handleSaveNotifs} disabled={savingNotifs} className="btn-primary flex items-center gap-2 text-xs py-2">
+              {savingNotifs ? <Loader2 size={13} className="animate-spin" /> : null}
+              {savedNotifs  ? <><CheckCircle2 size={13} /> Enregistré !</> : 'Enregistrer'}
+            </button>
           </div>
         )}
 
