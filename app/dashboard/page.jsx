@@ -18,15 +18,17 @@ import {
 
 const DAYS_FR = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam']
 
-function generateWeekData() {
+function generateWeekData(revenueByDay = []) {
   const today = new Date()
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(today)
     d.setDate(today.getDate() - (6 - i))
+    const dateStr = d.toISOString().split('T')[0]
+    const found   = revenueByDay.find(r => r._id === dateStr)
     return {
-      day   : DAYS_FR[d.getDay()],
-      CA    : Math.floor(Math.random() * 120000 + 30000),
-      cmds  : Math.floor(Math.random() * 30 + 5),
+      day    : DAYS_FR[d.getDay()],
+      CA     : found?.CA    || 0,
+      cmds   : found?.count || 0,
       isToday: i === 6,
     }
   })
@@ -46,7 +48,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function DashboardPage() {
   const [stats,   setStats]   = useState(null)
   const [orders,  setOrders]  = useState([])
-  const [weekData,setWeekData]= useState(generateWeekData())
+  const [weekData,setWeekData]= useState(generateWeekData([]))
   const [loading, setLoading] = useState(true)
   const [refresh, setRefresh] = useState(0)
 
@@ -60,6 +62,7 @@ export default function DashboardPage() {
         ])
         setStats(sRes.data.data)
         setOrders(oRes.data.data || [])
+        setWeekData(generateWeekData(sRes.data.data?.revenueByDay || []))
       } catch (_) {}
       finally { setLoading(false) }
     }
@@ -73,7 +76,7 @@ export default function DashboardPage() {
   return (
     <DashboardLayout
       title="Vue d'ensemble"
-      subtitle={`${today} · Bot actif`}
+      subtitle={today}
       actions={
         <div className="flex items-center gap-2">
           <button

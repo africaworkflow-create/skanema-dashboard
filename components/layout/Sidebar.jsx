@@ -106,14 +106,20 @@ export function Sidebar({ open, onClose }) {
           <div className="bg-gray-50 rounded-lg p-3">
             <div className="flex items-center justify-between mb-1">
               <span className="text-xs text-gray-500">Plan actuel</span>
-              <span className="text-2xs font-medium bg-gray-900 text-white px-2 py-0.5 rounded-full">
-                {user?.plan || 'Basic'}
+              <span className="text-2xs font-medium bg-gray-900 text-white px-2 py-0.5 rounded-full capitalize">
+                {user?.plan || 'basic'}
               </span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <Wifi size={12} className="text-green-500" />
-              <span className="text-2xs text-gray-400">Bot actif</span>
-            </div>
+            {(() => {
+              const pid = user?.whatsappPhoneNumberId
+              const ok  = pid && !pid.startsWith('PENDING_') && pid !== 'A_CONFIGURER'
+              return (
+                <div className="flex items-center gap-1.5">
+                  <Wifi size={12} className={ok ? 'text-green-500' : 'text-gray-300'} />
+                  <span className="text-2xs text-gray-400">{ok ? 'Bot actif' : 'Bot en attente'}</span>
+                </div>
+              )
+            })()}
           </div>
           <button
             onClick={logout}
