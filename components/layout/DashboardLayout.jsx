@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
-import { Menu, Bell } from 'lucide-react'
+import { Menu } from 'lucide-react'
+import { NotificationBell } from '@/components/ui/NotificationBell'
 import { Sidebar } from './Sidebar'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -38,9 +39,7 @@ export function DashboardLayout({ children, title, subtitle, actions }) {
 
             <div className="flex items-center gap-2">
               {actions}
-              <button className="relative p-2 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
-                <Bell size={18} />
-              </button>
+              <NotificationBell />
               <div className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center
                               text-white text-xs font-medium ml-1">
                 {user?.name?.[0]?.toUpperCase() || 'A'}
