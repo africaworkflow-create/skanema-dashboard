@@ -49,8 +49,8 @@ function PasswordStrength({ password }) {
   }
   if (s2 && !s3) missing.push('un chiffre')
 
-  const color = score === 0 ? '#e5e7eb' : score === 1 ? '#ef4444' : score === 2 ? '#f97316' : '#16a34a'
-  const label = score === 0 ? '' :
+  const color = score === 0 ? '#ef4444' : score === 1 ? '#ef4444' : score === 2 ? '#f97316' : '#16a34a'
+  const label = score === 0 ? '8 caractères minimum' :
                 score === 3 ? 'Fort — mot de passe sécurisé' :
                 'Ajoutez ' + missing.join(' et ')
 
@@ -61,7 +61,7 @@ function PasswordStrength({ password }) {
           <div
             key={i}
             className="h-1.5 flex-1 rounded-full transition-all duration-300"
-            style={{ background: i <= score ? color : '#e5e7eb' }}
+            style={{ background: (i === 1 && password.length > 0) || i <= score ? color : '#e5e7eb' }}
           />
         ))}
       </div>
