@@ -67,12 +67,20 @@ export function SetupChecklist() {
                           user.whatsappPhoneNumberId !== 'A_CONFIGURER'
 
         // Vérifie les zones via une requête dédiée
-        let hasZones = false
-        try {
-          const { getZones } = await import('@/lib/api')
-          const zonesRes = await getZones()
-          hasZones = (zonesRes.data.zones || []).length > 0
-        } catch (_) {}
+        // Zones configurées = position GPS différente de la position par défaut
+// ET au moins une zone active
+let hasZones = false
+try {
+  const { getZones } = await import('@/lib/api')
+  const zonesRes  = await getZones()
+  const zones     = zonesRes.data.zones || []
+  const location  = zonesRes.data.location
+  const hasCustomPos = location &&
+    !(Math.abs(location.latitude - 14.6937) < 0.001 &&
+      Math.abs(location.longitude - (-17.4441)) < 0.001)
+  const hasActiveZone = zones.some(z => z.active)
+  hasZones = hasCustomPos && hasActiveZone
+} catch (_) {}
 
         setSteps(prev => prev.map(s => ({
         ...s,
