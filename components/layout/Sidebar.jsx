@@ -2,11 +2,10 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
-import { useState, useEffect } from 'react'
 import api from '@/lib/api'
 import {
   LayoutDashboard, ShoppingBag, UtensilsCrossed, BarChart3,
-  MapPin, MessageCircle, Settings, LogOut, X, Wifi, WifiOff
+  MapPin, MessageCircle, Settings, LogOut, X, Wifi, WifiOff, Clock
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -18,9 +17,10 @@ const NAV = [
 ]
 
 const NAV_CONFIG = [
-  { href: '/dashboard/zones',      label: 'Zones livraison', icon: MapPin         },
-  { href: '/dashboard/whatsapp',   label: 'WhatsApp',        icon: MessageCircle  },
-  { href: '/dashboard/parametres', label: 'Paramètres',      icon: Settings       },
+  { href: '/dashboard/zones',      label: 'Zones livraison', icon: MapPin        },
+  { href: '/dashboard/whatsapp',   label: 'WhatsApp',        icon: MessageCircle },
+  { href: '/dashboard/horaires',   label: 'Horaires',        icon: Clock         },
+  { href: '/dashboard/parametres', label: 'Paramètres',      icon: Settings      },
 ]
 
 function NavItem({ href, label, icon: Icon, onClick }) {
@@ -44,19 +44,10 @@ function NavItem({ href, label, icon: Icon, onClick }) {
 }
 
 export function Sidebar({ open, onClose }) {
-  const { user, logout }    = useAuth()
-  const [botActive, setBotActive] = useState(false)
+  const { user, logout } = useAuth()
 
-  useEffect(() => {
-    const check = async () => {
-      try {
-        const res = await api.get('/api/auth/me')
-        const pid = res.data.data?.whatsappPhoneNumberId
-        setBotActive(pid && !pid.startsWith('PENDING_') && pid !== 'A_CONFIGURER')
-      } catch (_) {}
-    }
-    check()
-  }, [])
+  const pid       = user?.whatsappPhoneNumberId
+  const botActive = pid && !pid.startsWith('PENDING_') && pid !== 'A_CONFIGURER'
 
   return (
     <>
