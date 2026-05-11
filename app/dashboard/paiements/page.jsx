@@ -87,14 +87,11 @@ export default function PaiementsPage() {
   }
 
   const handleToggleCash = async (val) => {
-  console.log('cashEnabled toggle:', val)
-  setCashEnabled(val)
-  try {
-    await api.patch('/api/auth/payment', { cashEnabled: val })
-  } catch (err) {
-    console.log('error:', err)
+    setCashEnabled(val)
+    try {
+      await api.patch('/api/auth/payment', { cashEnabled: val })
+    } catch (_) {}
   }
-}
 
   const waveConfigured = wave.apiKey && wave.apiKey !== '' && wave.apiKey !== 'A_CONFIGURER'
 
