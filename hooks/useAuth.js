@@ -1,13 +1,15 @@
 'use client'
-import { useState, useEffect, createContext, useContext } from 'react'
+import { useState, useEffect, createContext, useContext, useRef } from 'react'
 import Cookies from 'js-cookie'
 import { login as apiLogin } from '@/lib/api'
+import api from '@/lib/api'
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [user,    setUser]    = useState(null)
   const [loading, setLoading] = useState(true)
+  const fetchedRef = useRef(false)
 
   useEffect(() => {
     const token = Cookies.get('skanema_token')
@@ -15,6 +17,16 @@ export function AuthProvider({ children }) {
     if (token && data) {
       try { setUser(JSON.parse(data)) } catch (_) {}
     }
+
+    // Enrichit les données user avec /api/auth/me une seule fois
+    if (token && !fetchedRef.current) {
+      fetchedRef.current = true
+      api.get('/api/auth/me').then(res => {
+        const d = res.data.data
+        setUser(prev => prev ? { ...prev, ...d } : d)
+      }).catch(() => {})
+    }
+
     setLoading(false)
   }, [])
 
