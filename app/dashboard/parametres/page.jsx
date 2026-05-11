@@ -195,8 +195,8 @@ export default function ParametresPage() {
               { key: 'payment',      label: 'Paiement confirmé',       desc: 'Notification quand un paiement Wave est validé' },
               { key: 'dailySummary', label: 'Résumé quotidien',        desc: 'Bilan du jour envoyé à 22h sur WhatsApp' },
             ].map((notif) => (
-              <div key={notif.key} className="flex items-center justify-between py-1">
-                <div>
+              <div key={notif.key} className="flex items-start justify-between py-1 gap-3">
+                <div className="flex-1">
                   <p className="text-sm font-medium text-gray-900">{notif.label}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{notif.desc}</p>
                 </div>
@@ -204,7 +204,7 @@ export default function ParametresPage() {
                   type="checkbox"
                   checked={notifs[notif.key]}
                   onChange={e => setNotifs(n => ({ ...n, [notif.key]: e.target.checked }))}
-                  className="w-4 h-4 rounded accent-gray-900 cursor-pointer"
+                  className="w-4 h-4 rounded accent-gray-900 cursor-pointer flex-shrink-0 mt-1"
                 />
               </div>
             ))}
