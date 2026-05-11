@@ -10,11 +10,11 @@ export function DashboardLayout({ children, title, subtitle, actions }) {
   const { user } = useAuth()
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Main */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0">
 
         {/* Topbar */}
         <header className="bg-white border-b border-gray-100 px-4 sm:px-6 py-4 flex-shrink-0">
