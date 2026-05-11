@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import {
   LayoutDashboard, ShoppingBag, UtensilsCrossed, BarChart3,
-  MapPin, MessageCircle, Settings, LogOut, X, Wifi, WifiOff, Clock
+  MapPin, MessageCircle, Settings, LogOut, X, Wifi, WifiOff, Clock, CreditCard
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -17,6 +17,7 @@ const NAV = [
 
 const NAV_CONFIG = [
   { href: '/dashboard/zones',      label: 'Zones livraison', icon: MapPin         },
+  { href: '/dashboard/paiements',   label: 'Paiements',       icon: CreditCard     },
   { href: '/dashboard/whatsapp',   label: 'WhatsApp',        icon: MessageCircle  },
   { href: '/dashboard/horaires',   label: 'Horaires',        icon: Clock          },
   { href: '/dashboard/parametres', label: 'Paramètres',      icon: Settings       },
