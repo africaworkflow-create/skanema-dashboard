@@ -49,9 +49,10 @@ export function SetupChecklist() {
   const [loading,   setLoading]   = useState(true)
 
   useEffect(() => {
-    // Vérifie si déjà dismissed en localStorage
-    const key = 'skanema_checklist_dismissed_' + user?.restaurantId
-    if (localStorage.getItem(key)) { setDismissed(true); return }
+    // Attend que user soit chargé avant de vérifier le dismissed
+    if (!user?.restaurantId) return
+    const key = 'skanema_checklist_dismissed_' + user.restaurantId
+    if (localStorage.getItem(key)) { setDismissed(true); setLoading(false); return }
 
     const check = async () => {
       try {
@@ -92,8 +93,9 @@ export function SetupChecklist() {
   const progress  = Math.round((doneCount / steps.length) * 100)
 
   const handleDismiss = () => {
-    const key = 'skanema_checklist_dismissed_' + user?.restaurantId
-    localStorage.setItem(key, '1')
+    if (user?.restaurantId) {
+      localStorage.setItem('skanema_checklist_dismissed_' + user.restaurantId, '1')
+    }
     setDismissed(true)
   }
 
