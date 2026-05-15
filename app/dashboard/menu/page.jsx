@@ -375,6 +375,7 @@ export default function MenuPage() {
                             value={group.name}
                             onChange={e => updateGroup(gi, 'name', e.target.value)}
                             placeholder="Ex: Choisir une sauce"
+                            style={{ fontSize: '16px' }}
                             className="input flex-1 text-sm"
                           />
                           <button onClick={() => removeGroup(gi)} className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors flex-shrink-0">
@@ -406,6 +407,7 @@ export default function MenuPage() {
                                 onChange={e => updateChoice(gi, ci, 'label', e.target.value)}
                                 placeholder="Ex: Sauce pimentée"
                                 className="input flex-1 text-sm"
+                                style={{ fontSize: '16px' }}
                               />
                               <input
                                 type="number"
@@ -414,6 +416,7 @@ export default function MenuPage() {
                                 placeholder="+0"
                                 min={0}
                                 className="input w-20 text-sm"
+                                style={{ fontSize: '16px' }}
                               />
                               <button onClick={() => removeChoice(gi, ci)} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors flex-shrink-0">
                                 <X size={13} />

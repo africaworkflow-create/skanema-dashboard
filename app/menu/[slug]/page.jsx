@@ -162,18 +162,21 @@ function ItemDetail({ item, onClose, onAdd }) {
 }
 
 // ── Carte plat — layout liste ────────────────────────────────────
-function DishCard({ item, qty, onOpen }) {
+function DishCard({ item, qty, onOpen, onAddDirect }) {
   const [imgError, setImgError] = useState(false)
   const hasOptions = (item.optionGroups || []).length > 0
 
   return (
     <div
-      onClick={() => onOpen(item)}
-      className="bg-white rounded-2xl overflow-hidden border border-gray-100 flex items-stretch cursor-pointer active:scale-[0.99] transition-all"
+      className="bg-white rounded-2xl overflow-hidden border border-gray-100 flex items-stretch"
       style={{ minHeight: '100px' }}
     >
-      {/* Image */}
-      <div className="relative flex-shrink-0" style={{ width: '110px' }}>
+      {/* Image cliquable → fiche détail */}
+      <div
+        onClick={() => onOpen(item)}
+        className="relative flex-shrink-0 cursor-pointer active:opacity-80 transition-opacity"
+        style={{ width: '110px' }}
+      >
         {!imgError && item.imageUrl ? (
           <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" onError={() => setImgError(true)} loading="lazy" />
         ) : (
@@ -187,21 +190,22 @@ function DishCard({ item, qty, onOpen }) {
       </div>
 
       {/* Contenu */}
-      <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
+      <div onClick={() => onOpen(item)} className="flex-1 p-3 flex flex-col justify-between min-w-0 cursor-pointer">
         <div>
           <p className="text-sm font-semibold text-gray-900 leading-tight">{item.name}</p>
           <p className="text-xs text-gray-400 mt-1 leading-relaxed line-clamp-2">{item.description}</p>
         </div>
         <div className="flex items-center justify-between mt-2">
           <p className="text-sm font-bold text-gray-900">{formatFCFA(item.price)}</p>
-          <div className="flex items-center gap-2">
-            {hasOptions && (
-              <span className="text-2xs text-gray-400">Personnalisable</span>
-            )}
-            <div className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center flex-shrink-0">
-              <Plus size={14} className="text-white" />
-            </div>
-          </div>
+          <button
+            onClick={e => {
+              e.stopPropagation()
+              if (hasOptions) { onOpen(item) } else { onAddDirect(item) }
+            }}
+            className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center flex-shrink-0 active:scale-90 transition-all"
+          >
+            <Plus size={14} className="text-white" />
+          </button>
         </div>
       </div>
     </div>
@@ -211,7 +215,7 @@ function DishCard({ item, qty, onOpen }) {
 // ── Vue panier ───────────────────────────────────────────────────
 function CartView({ cart, restaurant, onBack, onAdd, onRemove, slug, sid }) {
   const items    = Object.values(cart).filter(i => i.qty > 0)
-  const subtotal = items.reduce((s, i) => s + i.unitPrice * i.qty, 0)
+  const subtotal = items.reduce((s, i) => s + (i.unitPrice || i.price) * i.qty, 0)
 
   const [ordering,     setOrdering]     = useState(false)
   const [orderError,   setOrderError]   = useState('')
@@ -324,7 +328,7 @@ function CartView({ cart, restaurant, onBack, onAdd, onRemove, slug, sid }) {
                 {item.qty === 1 ? <Trash2 size={13} className="text-red-400" /> : <Minus size={13} className="text-gray-600" />}
               </button>
               <span className="text-sm font-bold text-gray-900 w-5 text-center">{item.qty}</span>
-              <button onClick={() => onAdd(item)}
+              <button onClick={() => onAdd(item, 1, item.unitPrice, item.options || [])}
                 className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center active:scale-90 transition-all">
                 <Plus size={13} className="text-white" />
               </button>
@@ -421,24 +425,30 @@ export default function MenuPage() {
 
   // Ajoute au panier avec options — clé unique par item+options
   const addToCart = useCallback((item, qty = 1, unitPrice = null, options = []) => {
-    const price = unitPrice !== null ? unitPrice : item.price
-    const key   = item._id || item.id
+    const price      = unitPrice !== null ? unitPrice : item.price
+    const baseKey    = item._id || item.id
+    // Clé unique = id + options choisies (pour différencier même plat avec options différentes)
+    const optionsKey = options.length > 0
+      ? options.map(o => o.choices.join(',')).join('|')
+      : ''
+    const key = optionsKey ? baseKey + '_' + optionsKey.replace(/[^a-zA-Z0-9]/g, '') : baseKey
     setCart(prev => ({
       ...prev,
       [key]: {
-        id      : key,
-        name    : item.name,
-        price   : item.price,
+        id       : baseKey,
+        cartKey  : key,
+        name     : item.name,
+        price    : item.price,
         unitPrice: price,
-        imageUrl: item.imageUrl,
-        options : options,
-        qty     : (prev[key]?.qty || 0) + qty,
+        imageUrl : item.imageUrl,
+        options  : options,
+        qty      : (prev[key]?.qty || 0) + qty,
       }
     }))
   }, [])
 
   const removeFromCart = useCallback((item) => {
-    const key = item._id || item.id
+    const key = item.cartKey || item._id || item.id
     setCart(prev => {
       const current = prev[key]?.qty || 0
       if (current <= 1) { const next = { ...prev }; delete next[key]; return next }
@@ -447,7 +457,7 @@ export default function MenuPage() {
   }, [])
 
   const cartCount = Object.values(cart).reduce((s, i) => s + i.qty, 0)
-  const cartTotal = Object.values(cart).reduce((s, i) => s + i.unitPrice * i.qty, 0)
+  const cartTotal = Object.values(cart).reduce((s, i) => s + (i.unitPrice || i.price) * i.qty, 0)
 
   const categories = ['Tous', ...new Set(menuItems.map(i => i.category).filter(Boolean))]
   const filtered   = menuItems.filter(item =>
@@ -545,8 +555,9 @@ export default function MenuPage() {
               <DishCard
                 key={item._id}
                 item={item}
-                qty={cart[item._id]?.qty || 0}
+                qty={Object.values(cart).filter(c => c.id === item._id).reduce((s, c) => s + c.qty, 0)}
                 onOpen={setDetail}
+                onAddDirect={(item) => addToCart(item, 1, null, [])}
               />
             ))}
           </div>
