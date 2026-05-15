@@ -10,23 +10,26 @@ import { getMenu, createItem, updateItem, deleteItem, toggleItem } from '@/lib/a
 import { formatFCFA } from '@/lib/utils'
 import {
   Plus, Pencil, Trash2, UtensilsCrossed,
-  Loader2, X, Clock, AlertTriangle
+  Loader2, X, Clock, AlertTriangle, ChevronDown, ChevronUp
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 
-const CATEGORIES = ['Plats principaux','Entrées','Desserts','Boissons','Accompagnements']
-
+const CATEGORIES  = ['Plats principaux','Entrées','Desserts','Boissons','Accompagnements']
 const PLAN_LIMITS = { basic: 10, pro: 25, premium: 999 }
 
 const EMPTY_FORM = {
   name:'', description:'', price:'', category:'Plats principaux',
   imageUrl:'', preparationTime:'30', available:true,
+  optionGroups: [],
 }
 
+const EMPTY_GROUP = { name:'', required:false, multiple:false, choices:[] }
+const EMPTY_CHOICE = { label:'', extraPrice:'' }
+
 export default function MenuPage() {
-  const { user }                      = useAuth()
-  const currentPlan                   = user?.plan || 'basic'
-  const maxItems                      = PLAN_LIMITS[currentPlan] || 10
+  const { user }    = useAuth()
+  const currentPlan = user?.plan || 'basic'
+  const maxItems    = PLAN_LIMITS[currentPlan] || 10
 
   const [items,      setItems]      = useState([])
   const [loading,    setLoading]    = useState(true)
@@ -38,6 +41,7 @@ export default function MenuPage() {
   const [toggling,   setToggling]   = useState(null)
   const [error,      setError]      = useState('')
   const [deleteConf, setDeleteConf] = useState(null)
+  const [showOptions,setShowOptions]= useState(false)
   const firstInput                  = useRef(null)
 
   const load = async () => {
@@ -58,17 +62,23 @@ export default function MenuPage() {
     setEditing(null)
     setForm(EMPTY_FORM)
     setError('')
+    setShowOptions(false)
     setModal(true)
   }
 
   const openEdit = (item) => {
     setEditing(item)
     setForm({
-      name: item.name, description: item.description,
-      price: String(item.price), category: item.category,
-      imageUrl: item.imageUrl, preparationTime: String(item.preparationTime),
-      available: item.available,
+      name           : item.name,
+      description    : item.description,
+      price          : String(item.price),
+      category       : item.category,
+      imageUrl       : item.imageUrl,
+      preparationTime: String(item.preparationTime),
+      available      : item.available,
+      optionGroups   : item.optionGroups || [],
     })
+    setShowOptions((item.optionGroups || []).length > 0)
     setError('')
     setModal(true)
   }
@@ -83,14 +93,17 @@ export default function MenuPage() {
     try {
       const payload = {
         ...form,
-        price: Number(form.price),
+        price          : Number(form.price),
         preparationTime: Number(form.preparationTime),
+        optionGroups   : form.optionGroups.map(g => ({
+          ...g,
+          choices: g.choices.map(c => ({
+            label     : c.label,
+            extraPrice: Number(c.extraPrice) || 0,
+          })).filter(c => c.label.trim()),
+        })).filter(g => g.name.trim() && g.choices.length > 0),
       }
-      if (editing) {
-        await updateItem(editing._id, payload)
-      } else {
-        await createItem(payload)
-      }
+      editing ? await updateItem(editing._id, payload) : await createItem(payload)
       setModal(false)
       await load()
     } catch (err) {
@@ -104,9 +117,7 @@ export default function MenuPage() {
     setToggling(item._id)
     try {
       await toggleItem(item._id, !item.available)
-      setItems(prev => prev.map(i =>
-        i._id === item._id ? { ...i, available: !i.available } : i
-      ))
+      setItems(prev => prev.map(i => i._id === item._id ? { ...i, available: !i.available } : i))
     } catch (_) {}
     finally { setToggling(null) }
   }
@@ -119,6 +130,52 @@ export default function MenuPage() {
       setDeleteConf(null)
     } catch (_) {}
     finally { setDeleting(null) }
+  }
+
+  // ── Gestion groupes d'options ──────────────────────────────────
+  const addGroup = () => {
+    setForm(f => ({ ...f, optionGroups: [...f.optionGroups, { ...EMPTY_GROUP, choices: [] }] }))
+  }
+
+  const updateGroup = (gi, field, val) => {
+    setForm(f => ({
+      ...f,
+      optionGroups: f.optionGroups.map((g, i) => i === gi ? { ...g, [field]: val } : g)
+    }))
+  }
+
+  const removeGroup = (gi) => {
+    setForm(f => ({ ...f, optionGroups: f.optionGroups.filter((_, i) => i !== gi) }))
+  }
+
+  const addChoice = (gi) => {
+    setForm(f => ({
+      ...f,
+      optionGroups: f.optionGroups.map((g, i) =>
+        i === gi ? { ...g, choices: [...g.choices, { ...EMPTY_CHOICE }] } : g
+      )
+    }))
+  }
+
+  const updateChoice = (gi, ci, field, val) => {
+    setForm(f => ({
+      ...f,
+      optionGroups: f.optionGroups.map((g, i) =>
+        i === gi ? {
+          ...g,
+          choices: g.choices.map((c, j) => j === ci ? { ...c, [field]: val } : c)
+        } : g
+      )
+    }))
+  }
+
+  const removeChoice = (gi, ci) => {
+    setForm(f => ({
+      ...f,
+      optionGroups: f.optionGroups.map((g, i) =>
+        i === gi ? { ...g, choices: g.choices.filter((_, j) => j !== ci) } : g
+      )
+    }))
   }
 
   const grouped = CATEGORIES.reduce((acc, cat) => {
@@ -159,93 +216,63 @@ export default function MenuPage() {
           </div>
           <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all duration-500 ${
-                items.length / maxItems >= 0.9 ? 'bg-red-400' :
-                items.length / maxItems >= 0.7 ? 'bg-amber-400' : 'bg-gray-900'
-              }`}
+              className="h-full bg-gray-900 rounded-full transition-all"
               style={{ width: `${Math.min(100, (items.length / maxItems) * 100)}%` }}
             />
           </div>
-          {atLimit && (
-            <p className="text-xs text-amber-600 mt-2">
-              Limite atteinte. Passez au plan supérieur pour ajouter plus de plats.
-            </p>
-          )}
         </div>
       )}
 
+      {/* Liste des plats */}
       {loading ? (
-        <div className="flex justify-center py-20">
-          <Loader2 size={22} className="animate-spin text-gray-300" />
-        </div>
+        <div className="flex justify-center py-16"><Loader2 className="animate-spin text-gray-300" size={22} /></div>
       ) : items.length === 0 ? (
-        <EmptyState
-          icon={UtensilsCrossed}
-          title="Aucun plat dans le menu"
-          description="Ajoutez votre premier plat pour que vos clients puissent commander via WhatsApp."
-          action={
-            <button onClick={openCreate} className="btn-primary flex items-center gap-2">
-              <Plus size={14} /> Ajouter un plat
-            </button>
-          }
-        />
+        <EmptyState icon={UtensilsCrossed} title="Aucun plat" description="Ajoutez votre premier plat pour commencer.">
+          <button onClick={openCreate} className="btn-primary mt-4 flex items-center gap-1.5">
+            <Plus size={14} /> Ajouter un plat
+          </button>
+        </EmptyState>
       ) : (
         <div className="space-y-6">
           {Object.entries(grouped).map(([cat, catItems]) => (
             <div key={cat}>
-              <div className="flex items-center gap-2 mb-3">
-                <h2 className="text-xs font-medium text-gray-400 uppercase tracking-wider">{cat}</h2>
-                <span className="text-xs text-gray-300">{catItems.length}</span>
-              </div>
-              <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
-                {catItems.map((item, i) => (
-                  <div
-                    key={item._id}
-                    className={`flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3.5 ${
-                      i < catItems.length - 1 ? 'border-b border-gray-50' : ''
-                    }`}
-                  >
-                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                      {item.imageUrl ? (
-                        <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-300">
-                          <UtensilsCrossed size={16} />
-                        </div>
-                      )}
+              <h2 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">{cat}</h2>
+              <div className="bg-white border border-gray-100 rounded-xl overflow-hidden divide-y divide-gray-50">
+                {catItems.map(item => (
+                  <div key={item._id} className="flex items-center gap-3 p-4">
+                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+                      {item.imageUrl
+                        ? <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                        : <div className="w-full h-full flex items-center justify-center text-xl">🍽️</div>
+                      }
                     </div>
-
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
-                        {!item.available && <Badge variant="gray">Indisponible</Badge>}
+                        {(item.optionGroups || []).length > 0 && (
+                          <span className="text-2xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full">
+                            {item.optionGroups.length} option{item.optionGroups.length > 1 ? 's' : ''}
+                          </span>
+                        )}
                       </div>
-                      <div className="flex items-center gap-3 mt-0.5">
-                        <span className="text-sm font-medium text-gray-900">
-                          {formatFCFA(item.price)}
-                        </span>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-xs font-medium text-gray-900">{formatFCFA(item.price)}</span>
+                        <span className="text-gray-200">·</span>
                         <span className="text-xs text-gray-400 flex items-center gap-1">
-                          <Clock size={10} /> {item.preparationTime} min
+                          <Clock size={10} />{item.preparationTime} min
                         </span>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       <Toggle
                         checked={item.available}
                         onChange={() => handleToggle(item)}
                         disabled={toggling === item._id}
                       />
-                      <button
-                        onClick={() => openEdit(item)}
-                        className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
-                      >
+                      <button onClick={() => openEdit(item)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors">
                         <Pencil size={14} />
                       </button>
-                      <button
-                        onClick={() => setDeleteConf(item)}
-                        className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
-                      >
+                      <button onClick={() => setDeleteConf(item)} className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -260,8 +287,10 @@ export default function MenuPage() {
       {/* Modal ajout/édition */}
       {modal && (
         <div className="fixed inset-0 bg-black/30 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-white w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl max-h-[92vh] flex flex-col">
-            <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100">
+          <div className="bg-white w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl flex flex-col max-h-[92vh]">
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
               <h2 className="text-base font-semibold text-gray-900">
                 {editing ? 'Modifier le plat' : 'Ajouter un plat'}
               </h2>
@@ -270,85 +299,142 @@ export default function MenuPage() {
               </button>
             </div>
 
+            {/* Formulaire */}
             <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
+
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1.5">Nom du plat *</label>
-                <input
-                  ref={firstInput}
-                  value={form.name}
-                  onChange={e => setForm(f => ({...f, name: e.target.value}))}
-                  placeholder="Ex: Thiéboudienne Rouge"
-                  className="input"
-                  maxLength={100}
-                />
+                <input ref={firstInput} value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))}
+                  placeholder="Ex: Thiéboudienne Rouge" className="input" maxLength={100} />
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1.5">Description *</label>
-                <textarea
-                  value={form.description}
-                  onChange={e => setForm(f => ({...f, description: e.target.value}))}
-                  placeholder="Décrivez le plat en quelques mots…"
-                  rows={3}
-                  maxLength={500}
-                  className="input resize-none"
-                />
+                <textarea value={form.description} onChange={e => setForm(f => ({...f, description: e.target.value}))}
+                  placeholder="Décrivez le plat en quelques mots…" rows={3} maxLength={500} className="input resize-none" />
                 <p className="text-2xs text-gray-400 mt-1 text-right">{form.description.length}/500</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1.5">Prix (FCFA) *</label>
-                  <input
-                    type="number"
-                    value={form.price}
-                    onChange={e => setForm(f => ({...f, price: e.target.value}))}
-                    placeholder="3500"
-                    min={0}
-                    className="input"
-                  />
+                  <input type="number" value={form.price} onChange={e => setForm(f => ({...f, price: e.target.value}))}
+                    placeholder="3500" min={0} className="input" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1.5">Préparation (min)</label>
-                  <input
-                    type="number"
-                    value={form.preparationTime}
-                    onChange={e => setForm(f => ({...f, preparationTime: e.target.value}))}
-                    placeholder="30"
-                    min={1}
-                    className="input"
-                  />
+                  <input type="number" value={form.preparationTime} onChange={e => setForm(f => ({...f, preparationTime: e.target.value}))}
+                    placeholder="30" min={1} className="input" />
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1.5">Catégorie</label>
-                <select
-                  value={form.category}
-                  onChange={e => setForm(f => ({...f, category: e.target.value}))}
-                  className="input"
-                >
+                <select value={form.category} onChange={e => setForm(f => ({...f, category: e.target.value}))} className="input">
                   {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1.5">Image du plat *</label>
-                <ImageUpload
-                  value={form.imageUrl}
-                  onChange={url => setForm(f => ({...f, imageUrl: url}))}
-                />
+                <ImageUpload value={form.imageUrl} onChange={url => setForm(f => ({...f, imageUrl: url}))} />
               </div>
 
               <div className="flex items-center justify-between py-1">
                 <div>
                   <p className="text-sm font-medium text-gray-900">Disponible</p>
-                  <p className="text-xs text-gray-400">Visible dans le menu WhatsApp</p>
+                  <p className="text-xs text-gray-400">Visible dans le menu</p>
                 </div>
-                <Toggle
-                  checked={form.available}
-                  onChange={v => setForm(f => ({...f, available: v}))}
-                />
+                <Toggle checked={form.available} onChange={v => setForm(f => ({...f, available: v}))} />
+              </div>
+
+              {/* Section options */}
+              <div className="border border-gray-100 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setShowOptions(!showOptions)}
+                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 text-left">Options et variantes</p>
+                    <p className="text-xs text-gray-400 text-left">
+                      {form.optionGroups.length > 0
+                        ? `${form.optionGroups.length} groupe${form.optionGroups.length > 1 ? 's' : ''} configuré${form.optionGroups.length > 1 ? 's' : ''}`
+                        : 'Sauces, tailles, cuissons…'}
+                    </p>
+                  </div>
+                  {showOptions ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+                </button>
+
+                {showOptions && (
+                  <div className="border-t border-gray-100 p-4 space-y-4">
+
+                    {form.optionGroups.map((group, gi) => (
+                      <div key={gi} className="bg-gray-50 rounded-xl p-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <input
+                            value={group.name}
+                            onChange={e => updateGroup(gi, 'name', e.target.value)}
+                            placeholder="Ex: Choisir une sauce"
+                            className="input flex-1 text-sm"
+                          />
+                          <button onClick={() => removeGroup(gi)} className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors flex-shrink-0">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" checked={group.required}
+                              onChange={e => updateGroup(gi, 'required', e.target.checked)}
+                              className="w-4 h-4 accent-gray-900 rounded" />
+                            <span className="text-xs text-gray-600">Obligatoire</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" checked={group.multiple}
+                              onChange={e => updateGroup(gi, 'multiple', e.target.checked)}
+                              className="w-4 h-4 accent-gray-900 rounded" />
+                            <span className="text-xs text-gray-600">Choix multiple</span>
+                          </label>
+                        </div>
+
+                        {/* Choix */}
+                        <div className="space-y-2">
+                          {group.choices.map((choice, ci) => (
+                            <div key={ci} className="flex items-center gap-2">
+                              <input
+                                value={choice.label}
+                                onChange={e => updateChoice(gi, ci, 'label', e.target.value)}
+                                placeholder="Ex: Sauce pimentée"
+                                className="input flex-1 text-sm"
+                              />
+                              <input
+                                type="number"
+                                value={choice.extraPrice}
+                                onChange={e => updateChoice(gi, ci, 'extraPrice', e.target.value)}
+                                placeholder="+0"
+                                min={0}
+                                className="input w-20 text-sm"
+                              />
+                              <button onClick={() => removeChoice(gi, ci)} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors flex-shrink-0">
+                                <X size={13} />
+                              </button>
+                            </div>
+                          ))}
+                          <button onClick={() => addChoice(gi)}
+                            className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1 mt-1 transition-colors">
+                            <Plus size={12} /> Ajouter un choix
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    <button onClick={addGroup}
+                      className="w-full border border-dashed border-gray-200 rounded-xl py-3 text-xs text-gray-500
+                                 hover:border-gray-300 hover:text-gray-700 flex items-center justify-center gap-1.5 transition-colors">
+                      <Plus size={13} /> Ajouter un groupe d'options
+                    </button>
+                  </div>
+                )}
               </div>
 
               {error && (
@@ -359,13 +445,10 @@ export default function MenuPage() {
               )}
             </div>
 
-            <div className="px-5 py-4 border-t border-gray-100 flex gap-3">
+            {/* Footer */}
+            <div className="px-5 py-4 border-t border-gray-100 flex gap-3 flex-shrink-0">
               <button onClick={() => setModal(false)} className="btn-ghost flex-1">Annuler</button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="btn-primary flex-1 flex items-center justify-center gap-2"
-              >
+              <button onClick={handleSave} disabled={saving} className="btn-primary flex-1 flex items-center justify-center gap-2">
                 {saving && <Loader2 size={13} className="animate-spin" />}
                 {saving ? 'Enregistrement…' : editing ? 'Modifier' : 'Ajouter'}
               </button>
@@ -387,11 +470,8 @@ export default function MenuPage() {
             </p>
             <div className="flex gap-3">
               <button onClick={() => setDeleteConf(null)} className="btn-ghost flex-1">Annuler</button>
-              <button
-                onClick={() => handleDelete(deleteConf._id)}
-                disabled={deleting === deleteConf._id}
-                className="btn-danger flex-1 flex items-center justify-center gap-2"
-              >
+              <button onClick={() => handleDelete(deleteConf._id)} disabled={deleting === deleteConf._id}
+                className="btn-danger flex-1 flex items-center justify-center gap-2">
                 {deleting === deleteConf._id && <Loader2 size={12} className="animate-spin" />}
                 Supprimer
               </button>
