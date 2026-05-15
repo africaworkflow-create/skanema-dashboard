@@ -1,0 +1,17 @@
+User-agent: *
+
+# Pages publiques autorisées
+Allow: /
+Allow: /menu/
+
+# Pages privées — ne pas indexer
+Disallow: /onboarding
+Disallow: /onboarding/
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /login
+Disallow: /logout
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://www.skanema.com/sitemap.xml
