@@ -162,7 +162,7 @@ function ItemDetail({ item, onClose, onAdd }) {
 }
 
 // ── Carte plat — layout liste ────────────────────────────────────
-function DishCard({ item, qty, onOpen, onAddDirect }) {
+function DishCard({ item, qty, onOpen, onAddDirect, onRemoveDirect }) {
   const [imgError, setImgError] = useState(false)
   const hasOptions = (item.optionGroups || []).length > 0
 
@@ -197,15 +197,29 @@ function DishCard({ item, qty, onOpen, onAddDirect }) {
         </div>
         <div className="flex items-center justify-between mt-2">
           <p className="text-sm font-bold text-gray-900">{formatFCFA(item.price)}</p>
-          <button
-            onClick={e => {
-              e.stopPropagation()
-              if (hasOptions) { onOpen(item) } else { onAddDirect(item) }
-            }}
-            className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center flex-shrink-0 active:scale-90 transition-all"
-          >
-            <Plus size={14} className="text-white" />
-          </button>
+          {!hasOptions && qty > 0 ? (
+            <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+              <button onClick={() => onRemoveDirect(item)}
+                className="w-7 h-7 rounded-full border-2 border-gray-200 flex items-center justify-center active:scale-90 transition-all">
+                <Minus size={12} className="text-gray-600" />
+              </button>
+              <span className="text-sm font-bold text-gray-900 w-4 text-center">{qty}</span>
+              <button onClick={() => onAddDirect(item)}
+                className="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center active:scale-90 transition-all">
+                <Plus size={12} className="text-white" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={e => {
+                e.stopPropagation()
+                if (hasOptions) { onOpen(item) } else { onAddDirect(item) }
+              }}
+              className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center flex-shrink-0 active:scale-90 transition-all"
+            >
+              <Plus size={14} className="text-white" />
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -558,6 +572,7 @@ export default function MenuPage() {
                 qty={Object.values(cart).filter(c => c.id === item._id).reduce((s, c) => s + c.qty, 0)}
                 onOpen={setDetail}
                 onAddDirect={(item) => addToCart(item, 1, null, [])}
+                onRemoveDirect={(item) => removeFromCart({ ...item, cartKey: item._id || item.id })}
               />
             ))}
           </div>
