@@ -133,7 +133,21 @@ export default function ParametresPage() {
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1.5">Numéro de téléphone</label>
-              <input value={resto.phone} onChange={e => setResto(r => ({ ...r, phone: e.target.value }))} className="input" placeholder="221771234567" />
+              <div className="flex items-center gap-2">
+                <input
+                  value={resto.phone}
+                  readOnly
+                  className="input bg-gray-50 text-gray-400 cursor-not-allowed flex-1"
+                />
+                <span className="text-xs text-gray-400 whitespace-nowrap">Non modifiable</span>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">
+                Pour modifier votre numéro, contactez{' '}
+                <a href="https://wa.me/221784632103" target="_blank" rel="noopener noreferrer"
+                   className="underline hover:text-gray-600">
+                  le support Skanema
+                </a>.
+              </p>
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1.5">Adresse</label>
