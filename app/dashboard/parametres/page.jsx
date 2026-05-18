@@ -5,6 +5,7 @@ import { Loader2, CheckCircle2, Store, Lock, Bell } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import api from '@/lib/api'
 import { ImageUpload } from '@/components/ui/ImageUpload'
+import { AddressSearch } from '@/components/ui/AddressSearch'
 
 const PLAN_LIMITS = { basic: 10, pro: 25, premium: 999 }
 const PLAN_PRICE  = { basic: 15000, pro: 35000, premium: 75000 }
@@ -16,6 +17,7 @@ export default function ParametresPage() {
   const [saved,   setSaved]   = useState(false)
   const [loading, setLoading] = useState(true)
   const [resto,   setResto]   = useState({ name: '', phone: '', address: '', coverImage: '', cuisineType: '' })
+  const [position, setPosition] = useState({ latitude: 14.6937, longitude: -17.4441 })
   const [password, setPassword] = useState({ current: '', next: '', confirm: '' })
   const [passErr,  setPassErr]  = useState('')
   const [notifs,   setNotifs]   = useState({ newOrder: true, payment: true, dailySummary: false })
@@ -34,6 +36,7 @@ export default function ParametresPage() {
           coverImage : d.coverImage     || '',
           cuisineType: d.cuisineType    || '',
         })
+        if (d.location?.latitude) setPosition(d.location)
         if (d.notifications) setNotifs(d.notifications)
       } catch (_) {}
       finally { setLoading(false) }
@@ -44,31 +47,18 @@ export default function ParametresPage() {
   const handleSaveResto = async () => {
     setSaving(true)
     try {
-      await api.patch('/api/auth/profile', { name: resto.name, address: resto.address, coverImage: resto.coverImage, cuisineType: resto.cuisineType })
+      await api.patch('/api/auth/profile', { name: resto.name, address: resto.address, coverImage: resto.coverImage, cuisineType: resto.cuisineType, latitude: position.latitude, longitude: position.longitude })
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
     } catch (_) {}
     finally { setSaving(false) }
   }
 
-  const handleSaveNotifs = async () => {
-    setSavingNotifs(true)
-    try {
-      await api.patch('/api/auth/notifications', notifs)
-      setSavedNotifs(true)
-      setTimeout(() => setSavedNotifs(false), 2500)
-    } catch (_) {}
-    finally { setSavingNotifs(false) }
-  }
-
   const handleChangePass = async () => {
     if (!password.current || !password.next) { setPassErr('Remplissez tous les champs.'); return }
     if (password.next !== password.confirm)   { setPassErr('Les mots de passe ne correspondent pas.'); return }
     const passRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
-    if (!passRegex.test(password.next)) {
-      setPassErr('Mot de passe : 8 caractères minimum, une majuscule, une minuscule et un chiffre.')
-      return
-    }
+    if (!passRegex.test(password.next)) { setPassErr('Mot de passe : 8 caractères minimum, une majuscule, une minuscule et un chiffre.'); return }
     setPassErr('')
     setSaving(true)
     try {
@@ -92,6 +82,16 @@ export default function ParametresPage() {
   const isConfigured = user?.whatsappPhoneNumberId &&
     !user.whatsappPhoneNumberId?.startsWith('PENDING_') &&
     user.whatsappPhoneNumberId !== 'A_CONFIGURER'
+
+  const handleSaveNotifs = async () => {
+    setSavingNotifs(true)
+    try {
+      await api.patch('/api/auth/notifications', notifs)
+      setSavedNotifs(true)
+      setTimeout(() => setSavedNotifs(false), 2500)
+    } catch (_) {}
+    finally { setSavingNotifs(false) }
+  }
 
   const TABS = [
     { id: 'restaurant', label: 'Restaurant', icon: Store },
@@ -133,23 +133,7 @@ export default function ParametresPage() {
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1.5">Numéro de téléphone</label>
-              <div className="flex items-center gap-2">
-                <input
-                  value={resto.phone}
-                  readOnly
-                  className="input bg-gray-50 text-gray-400 cursor-not-allowed flex-1"
-                />
-                <span className="text-xs text-gray-400 whitespace-nowrap">
-                  🔒 Non modifiable
-                </span>
-              </div>
-              <p className="text-xs text-gray-400 mt-1">
-                Pour modifier votre numéro, contactez{' '}
-                <a href="https://wa.me/221778075388" target="_blank" rel="noopener noreferrer"
-                   className="underline hover:text-gray-600">
-                  le support Skanema
-                </a>.
-              </p>
+              <input value={resto.phone} onChange={e => setResto(r => ({ ...r, phone: e.target.value }))} className="input" placeholder="221771234567" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1.5">Adresse</label>
@@ -161,9 +145,19 @@ export default function ParametresPage() {
               <input
                 value={resto.cuisineType}
                 onChange={e => setResto(r => ({ ...r, cuisineType: e.target.value }))}
-                placeholder="Ex: Cuisine Sénégalaise, Fast-food, Pizzeria…"
+                placeholder="Ex: Cuisine Sénégalaise, Fast-food…"
                 className="input"
               />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">Position du restaurant</label>
+              <AddressSearch
+                latitude={position.latitude}
+                longitude={position.longitude}
+                onSelect={({ latitude, longitude }) => setPosition({ latitude, longitude })}
+              />
+              <p className="text-xs text-gray-400 mt-1">Utilisée pour calculer les frais de livraison.</p>
             </div>
 
             <div>
@@ -172,10 +166,9 @@ export default function ParametresPage() {
                 value={resto.coverImage}
                 onChange={url => setResto(r => ({ ...r, coverImage: url }))}
               />
-              <p className="text-xs text-gray-400 mt-1">
-                Affichée en haut de votre page menu. Format recommandé : 1200×400px.
-              </p>
+              <p className="text-xs text-gray-400 mt-1">Affichée en haut de votre page menu. Format recommandé : 1200×400px.</p>
             </div>
+
             <button onClick={handleSaveResto} disabled={saving} className="btn-primary flex items-center gap-2">
               {saving ? <Loader2 size={13} className="animate-spin" /> : null}
               {saved  ? <><CheckCircle2 size={13} /> Enregistré !</> : 'Enregistrer'}
@@ -221,8 +214,8 @@ export default function ParametresPage() {
               { key: 'payment',      label: 'Paiement confirmé',       desc: 'Notification quand un paiement Wave est validé' },
               { key: 'dailySummary', label: 'Résumé quotidien',        desc: 'Bilan du jour envoyé à 22h sur WhatsApp' },
             ].map((notif) => (
-              <div key={notif.key} className="flex items-center justify-between py-1">
-                <div>
+              <div key={notif.key} className="flex items-start justify-between py-1 gap-3">
+                <div className="flex-1">
                   <p className="text-sm font-medium text-gray-900">{notif.label}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{notif.desc}</p>
                 </div>
@@ -230,7 +223,7 @@ export default function ParametresPage() {
                   type="checkbox"
                   checked={notifs[notif.key]}
                   onChange={e => setNotifs(n => ({ ...n, [notif.key]: e.target.checked }))}
-                  className="w-4 h-4 rounded accent-gray-900 cursor-pointer"
+                  className="w-4 h-4 rounded accent-gray-900 cursor-pointer flex-shrink-0 mt-1"
                 />
               </div>
             ))}
