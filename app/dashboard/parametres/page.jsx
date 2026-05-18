@@ -5,7 +5,6 @@ import { Loader2, CheckCircle2, Store, Lock, Bell } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import api from '@/lib/api'
 import { ImageUpload } from '@/components/ui/ImageUpload'
-import { AddressSearch } from '@/components/ui/AddressSearch'
 
 const PLAN_LIMITS = { basic: 10, pro: 25, premium: 999 }
 const PLAN_PRICE  = { basic: 15000, pro: 35000, premium: 75000 }
@@ -17,7 +16,6 @@ export default function ParametresPage() {
   const [saved,   setSaved]   = useState(false)
   const [loading, setLoading] = useState(true)
   const [resto,   setResto]   = useState({ name: '', phone: '', address: '', coverImage: '', cuisineType: '' })
-  const [position, setPosition] = useState({ latitude: 14.6937, longitude: -17.4441 })
   const [password, setPassword] = useState({ current: '', next: '', confirm: '' })
   const [passErr,  setPassErr]  = useState('')
   const [notifs,   setNotifs]   = useState({ newOrder: true, payment: true, dailySummary: false })
@@ -36,7 +34,6 @@ export default function ParametresPage() {
           coverImage : d.coverImage     || '',
           cuisineType: d.cuisineType    || '',
         })
-        if (d.location?.latitude) setPosition(d.location)
         if (d.notifications) setNotifs(d.notifications)
       } catch (_) {}
       finally { setLoading(false) }
@@ -47,7 +44,7 @@ export default function ParametresPage() {
   const handleSaveResto = async () => {
     setSaving(true)
     try {
-      await api.patch('/api/auth/profile', { name: resto.name, address: resto.address, coverImage: resto.coverImage, cuisineType: resto.cuisineType, latitude: position.latitude, longitude: position.longitude })
+      await api.patch('/api/auth/profile', { name: resto.name, address: resto.address, coverImage: resto.coverImage, cuisineType: resto.cuisineType })
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
     } catch (_) {}
@@ -162,16 +159,6 @@ export default function ParametresPage() {
                 placeholder="Ex: Cuisine Sénégalaise, Fast-food…"
                 className="input"
               />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1.5">Position du restaurant</label>
-              <AddressSearch
-                latitude={position.latitude}
-                longitude={position.longitude}
-                onSelect={({ latitude, longitude }) => setPosition({ latitude, longitude })}
-              />
-              <p className="text-xs text-gray-400 mt-1">Utilisée pour calculer les frais de livraison.</p>
             </div>
 
             <div>
