@@ -14,7 +14,7 @@ export default function ParametresPage() {
   const [saving,  setSaving]  = useState(false)
   const [saved,   setSaved]   = useState(false)
   const [loading, setLoading] = useState(true)
-  const [resto,   setResto]   = useState({ name: '', phone: '', address: '' })
+  const [resto,   setResto]   = useState({ name: '', phone: '', address: '', coverImage: '', cuisineType: '' })
   const [password, setPassword] = useState({ current: '', next: '', confirm: '' })
   const [passErr,  setPassErr]  = useState('')
   const [notifs,   setNotifs]   = useState({ newOrder: true, payment: true, dailySummary: false })
@@ -27,9 +27,11 @@ export default function ParametresPage() {
         const res = await api.get('/api/auth/me')
         const d   = res.data.data
         setResto({
-          name   : d.restaurantName || '',
-          phone  : d.phone          || '',
-          address: d.address        || '',
+          name       : d.restaurantName || '',
+          phone      : d.phone          || '',
+          address    : d.address        || '',
+          coverImage : d.coverImage     || '',
+          cuisineType: d.cuisineType    || '',
         })
         if (d.notifications) setNotifs(d.notifications)
       } catch (_) {}
@@ -41,7 +43,7 @@ export default function ParametresPage() {
   const handleSaveResto = async () => {
     setSaving(true)
     try {
-      await api.patch('/api/auth/profile', { name: resto.name, address: resto.address })
+      await api.patch('/api/auth/profile', { name: resto.name, address: resto.address, coverImage: resto.coverImage, cuisineType: resto.cuisineType })
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
     } catch (_) {}
@@ -136,11 +138,13 @@ export default function ParametresPage() {
                   readOnly
                   className="input bg-gray-50 text-gray-400 cursor-not-allowed flex-1"
                 />
-                
+                <span className="text-xs text-gray-400 whitespace-nowrap">
+                  🔒 Non modifiable
+                </span>
               </div>
               <p className="text-xs text-gray-400 mt-1">
                 Pour modifier votre numéro, contactez{' '}
-                <a href="https://wa.me/221784632103" target="_blank" rel="noopener noreferrer"
+                <a href="https://wa.me/221778075388" target="_blank" rel="noopener noreferrer"
                    className="underline hover:text-gray-600">
                   le support Skanema
                 </a>.
@@ -149,6 +153,27 @@ export default function ParametresPage() {
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1.5">Adresse</label>
               <input value={resto.address} onChange={e => setResto(r => ({ ...r, address: e.target.value }))} className="input" />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">Type de cuisine</label>
+              <input
+                value={resto.cuisineType}
+                onChange={e => setResto(r => ({ ...r, cuisineType: e.target.value }))}
+                placeholder="Ex: Cuisine Sénégalaise, Fast-food, Pizzeria…"
+                className="input"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">Photo de couverture</label>
+              <ImageUpload
+                value={resto.coverImage}
+                onChange={url => setResto(r => ({ ...r, coverImage: url }))}
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Affichée en haut de votre page menu. Format recommandé : 1200×400px.
+              </p>
             </div>
             <button onClick={handleSaveResto} disabled={saving} className="btn-primary flex items-center gap-2">
               {saving ? <Loader2 size={13} className="animate-spin" /> : null}
@@ -195,8 +220,8 @@ export default function ParametresPage() {
               { key: 'payment',      label: 'Paiement confirmé',       desc: 'Notification quand un paiement Wave est validé' },
               { key: 'dailySummary', label: 'Résumé quotidien',        desc: 'Bilan du jour envoyé à 22h sur WhatsApp' },
             ].map((notif) => (
-              <div key={notif.key} className="flex items-start justify-between py-1 gap-3">
-                <div className="flex-1">
+              <div key={notif.key} className="flex items-center justify-between py-1">
+                <div>
                   <p className="text-sm font-medium text-gray-900">{notif.label}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{notif.desc}</p>
                 </div>
@@ -204,7 +229,7 @@ export default function ParametresPage() {
                   type="checkbox"
                   checked={notifs[notif.key]}
                   onChange={e => setNotifs(n => ({ ...n, [notif.key]: e.target.checked }))}
-                  className="w-4 h-4 rounded accent-gray-900 cursor-pointer flex-shrink-0 mt-1"
+                  className="w-4 h-4 rounded accent-gray-900 cursor-pointer"
                 />
               </div>
             ))}

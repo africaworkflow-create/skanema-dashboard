@@ -1,7 +1,7 @@
 'use client'
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
-import { Search, Clock, ChevronLeft, Plus, Minus, Trash2, ArrowRight, Loader2, MapPin, X, CheckCircle2 } from 'lucide-react'
+import { Search, Clock, ChevronLeft, Plus, Minus, Trash2, ArrowRight, Loader2, MapPin, X, Star, Bike } from 'lucide-react'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.skanema.com'
 
@@ -13,74 +13,248 @@ function Skeleton({ className }) {
   return <div className={`animate-pulse bg-gray-200 rounded-lg ${className}`} />
 }
 
-// ── Fiche détail plat avec options ──────────────────────────────
+// ── Génère une couleur de dégradé depuis le nom du restaurant ────
+function nameToColor(name) {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  const colors = [
+    ['#1a1a2e', '#16213e'],
+    ['#0f3460', '#533483'],
+    ['#1b4332', '#2d6a4f'],
+    ['#7b2d00', '#a63c00'],
+    ['#370617', '#6a040f'],
+    ['#1d3557', '#457b9d'],
+  ]
+  return colors[Math.abs(hash) % colors.length]
+}
+
+// ── Header restaurant avec cover image ──────────────────────────
+function RestaurantHeader({ restaurant, items }) {
+  const [scrollY, setScrollY] = useState(0)
+  const headerRef = useRef(null)
+
+  useEffect(() => {
+    const el = document.getElementById('menu-scroll')
+    if (!el) return
+    const handler = () => setScrollY(el.scrollTop)
+    el.addEventListener('scroll', handler, { passive: true })
+    return () => el.removeEventListener('scroll', handler)
+  }, [])
+
+  // Fallback mosaïque — 3 premières photos de plats
+  const coverImages = items
+    .filter(i => i.imageUrl)
+    .slice(0, 3)
+    .map(i => i.imageUrl)
+
+  const hasCover   = !!restaurant.coverImage
+  const hasMosaic  = !hasCover && coverImages.length > 0
+  const [from, to] = nameToColor(restaurant.name)
+
+  // Parallax léger sur l'image
+  const parallax = Math.min(scrollY * 0.3, 60)
+
+  // Statut ouverture
+  const isOpen   = restaurant.isOpen !== false
+  const openHint = restaurant.openHint || ''
+
+  return (
+    <div ref={headerRef} className="relative flex-shrink-0" style={{ height: '260px' }}>
+
+      {/* Fond */}
+      <div className="absolute inset-0 overflow-hidden">
+        {hasCover ? (
+          <img
+            src={restaurant.coverImage}
+            alt={restaurant.name}
+            className="w-full h-full object-cover"
+            style={{ transform: `translateY(${parallax}px)`, transition: 'transform 0.1s linear' }}
+          />
+        ) : hasMosaic ? (
+          <div className="w-full h-full grid" style={{
+            gridTemplateColumns: coverImages.length === 1 ? '1fr' : coverImages.length === 2 ? '1fr 1fr' : '2fr 1fr',
+            gridTemplateRows: coverImages.length === 3 ? '1fr 1fr' : '1fr',
+          }}>
+            {coverImages.map((url, i) => (
+              <img key={i} src={url} alt="" className="w-full h-full object-cover"
+                style={coverImages.length === 3 && i === 0 ? { gridRow: '1 / 3' } : {}} />
+            ))}
+          </div>
+        ) : (
+          <div className="w-full h-full" style={{ background: `linear-gradient(135deg, ${from}, ${to})` }} />
+        )}
+
+        {/* Overlay gradient */}
+        <div className="absolute inset-0" style={{
+          background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.75) 100%)'
+        }} />
+      </div>
+
+      {/* Vague SVG en bas */}
+      <div className="absolute bottom-0 left-0 right-0" style={{ height: '32px' }}>
+        <svg viewBox="0 0 390 32" preserveAspectRatio="none" className="w-full h-full">
+          <path d="M0,16 C65,32 130,0 195,16 C260,32 325,0 390,16 L390,32 L0,32 Z" fill="white" />
+        </svg>
+      </div>
+
+      {/* Badge statut */}
+      <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+           style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(8px)' }}>
+        <div className={`w-2 h-2 rounded-full ${isOpen ? 'bg-green-400' : 'bg-red-400'}`} />
+        <span className="text-xs text-white font-medium">
+          {isOpen ? `Ouvert${openHint ? ' · ' + openHint : ''}` : 'Fermé'}
+        </span>
+      </div>
+
+      {/* Infos restaurant */}
+      <div className="absolute bottom-10 left-4 right-4">
+        <h1 className="font-bold text-white leading-tight mb-1" style={{ fontSize: '26px', letterSpacing: '-0.5px' }}>
+          {restaurant.name}
+        </h1>
+        {restaurant.cuisineType && (
+          <p className="text-sm font-medium mb-1" style={{ color: '#fbbf24' }}>{restaurant.cuisineType}</p>
+        )}
+        {restaurant.address && (
+          <div className="flex items-center gap-1">
+            <MapPin size={11} className="text-white/60" />
+            <p className="text-xs text-white/60">{restaurant.address}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Badges info ──────────────────────────────────────────────────
+function InfoBadges({ avgPrepTime }) {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-100">
+      <div className="flex items-center gap-1.5 bg-gray-50 rounded-xl px-3 py-2">
+        <Clock size={13} className="text-gray-500" />
+        <div>
+          <p className="text-xs font-semibold text-gray-900 leading-none">{avgPrepTime}–{avgPrepTime + 15} min</p>
+          <p className="text-2xs text-gray-400">Livraison</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-1.5 bg-gray-50 rounded-xl px-3 py-2">
+        <Bike size={13} className="text-gray-500" />
+        <div>
+          <p className="text-xs font-semibold text-gray-900 leading-none">Livraison</p>
+          <p className="text-2xs text-gray-400">disponible</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Fiche détail plat ────────────────────────────────────────────
 function ItemDetail({ item, onClose, onAdd }) {
-  const [qty,       setQty]       = useState(1)
-  const [selected,  setSelected]  = useState({}) // groupId -> [choiceIndex]
-  const [imgError,  setImgError]  = useState(false)
+  const [qty,      setQty]      = useState(1)
+  const [selected, setSelected] = useState({})
+  const [closing,  setClosing]  = useState(false)
+  const [imgError, setImgError] = useState(false)
 
-  const groups = item.optionGroups || []
+  // Bloque le scroll arrière-plan
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
 
+  const handleClose = () => {
+    setClosing(true)
+    setTimeout(onClose, 280)
+  }
+
+  const groups     = item.optionGroups || []
   const toggleChoice = (gi, ci, multiple) => {
     setSelected(prev => {
-      const current = prev[gi] || []
-      if (multiple) {
-        return { ...prev, [gi]: current.includes(ci) ? current.filter(x => x !== ci) : [...current, ci] }
-      }
-      return { ...prev, [gi]: current.includes(ci) ? [] : [ci] }
+      const cur = prev[gi] || []
+      if (multiple) return { ...prev, [gi]: cur.includes(ci) ? cur.filter(x => x !== ci) : [...cur, ci] }
+      return { ...prev, [gi]: cur.includes(ci) ? [] : [ci] }
     })
   }
 
   const extraTotal = groups.reduce((sum, g, gi) => {
-    const sel = selected[gi] || []
-    return sum + sel.reduce((s, ci) => s + (Number(g.choices[ci]?.extraPrice) || 0), 0)
+    return sum + (selected[gi] || []).reduce((s, ci) => s + (Number(g.choices[ci]?.extraPrice) || 0), 0)
   }, 0)
-
   const unitPrice = item.price + extraTotal
   const total     = unitPrice * qty
-
-  const canAdd = groups.every((g, gi) => !g.required || (selected[gi] || []).length > 0)
+  const canAdd    = groups.every((g, gi) => !g.required || (selected[gi] || []).length > 0)
 
   const handleAdd = () => {
     if (!canAdd) return
     const options = groups.reduce((acc, g, gi) => {
       const sel = selected[gi] || []
-      if (sel.length > 0) {
-        acc.push({ group: g.name, choices: sel.map(ci => g.choices[ci].label) })
-      }
+      if (sel.length > 0) acc.push({ group: g.name, choices: sel.map(ci => g.choices[ci].label) })
       return acc
     }, [])
     onAdd(item, qty, unitPrice, options)
-    onClose()
+    handleClose()
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40"
-         onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden max-h-[90vh] flex flex-col"
-           style={{ animation: 'slideUp 0.25s ease' }}>
-        <style>{`@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}`}</style>
+    <>
+      {/* Overlay */}
+      <div
+        className="fixed inset-0 z-50"
+        style={{ background: closing ? 'rgba(0,0,0,0)' : 'rgba(0,0,0,0.45)', transition: 'background 0.28s ease' }}
+        onClick={handleClose}
+      />
 
-        {/* Image */}
-        <div className="relative flex-shrink-0" style={{ height: '200px' }}>
-          {!imgError && item.imageUrl ? (
-            <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" onError={() => setImgError(true)} />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-orange-50 to-amber-100 flex items-center justify-center text-6xl">🍽️</div>
-          )}
-          <button onClick={onClose}
-            className="absolute top-3 right-3 w-8 h-8 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center text-white">
-            <X size={16} />
-          </button>
-          <div className="absolute bottom-3 left-3 bg-black/50 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-            <Clock size={10} />{item.preparationTime} min
-          </div>
+      {/* Sheet */}
+      <div
+        className="fixed left-0 right-0 bottom-0 z-50 bg-white flex flex-col"
+        style={{
+          maxHeight        : 'calc(100dvh - 60px)', // dvh = dynamic viewport height, évite Safari toolbar
+          borderRadius     : '20px 20px 0 0',
+          animation        : closing ? 'slideDown 0.28s ease forwards' : 'slideUp 0.28s ease forwards',
+          maxWidth         : '480px',
+          margin           : '0 auto',
+          willChange       : 'transform',
+        }}
+      >
+        <style>{`
+          @keyframes slideUp   { from{transform:translateY(100%)} to{transform:translateY(0)} }
+          @keyframes slideDown { from{transform:translateY(0)} to{transform:translateY(100%)} }
+        `}</style>
+
+        {/* Handle bar */}
+        <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
+          <div className="w-10 h-1 rounded-full bg-gray-200" />
         </div>
 
-        {/* Contenu */}
-        <div className="overflow-y-auto flex-1 p-5">
+        {/* Image — hauteur fixe, object-cover sans zoom */}
+        <div className="flex-shrink-0 mx-4 mt-2 rounded-2xl overflow-hidden" style={{ height: '180px' }}>
+          {!imgError && item.imageUrl ? (
+            <img
+              src={item.imageUrl}
+              alt={item.name}
+              className="w-full h-full object-cover object-center"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-orange-50 to-amber-100 flex items-center justify-center text-5xl">
+              🍽️
+            </div>
+          )}
+        </div>
+
+        {/* Bouton fermer */}
+        <button
+          onClick={handleClose}
+          className="absolute top-4 right-4 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm"
+        >
+          <X size={16} className="text-gray-600" />
+        </button>
+
+        {/* Contenu scrollable */}
+        <div className="overflow-y-auto flex-1 px-4 py-4">
           <h2 className="text-lg font-bold text-gray-900 mb-1">{item.name}</h2>
-          <p className="text-sm text-gray-500 leading-relaxed mb-4">{item.description}</p>
+          <div className="flex items-center gap-2 mb-3">
+            <Clock size={12} className="text-gray-400" />
+            <span className="text-xs text-gray-400">{item.preparationTime} min de préparation</span>
+          </div>
+          <p className="text-sm text-gray-500 leading-relaxed mb-5">{item.description}</p>
 
           {/* Groupes d'options */}
           {groups.map((group, gi) => (
@@ -98,19 +272,16 @@ function ItemDetail({ item, onClose, onAdd }) {
                 {group.choices.map((choice, ci) => {
                   const isSelected = (selected[gi] || []).includes(ci)
                   return (
-                    <button
-                      key={ci}
-                      onClick={() => toggleChoice(gi, ci, group.multiple)}
+                    <button key={ci} onClick={() => toggleChoice(gi, ci, group.multiple)}
                       className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-all text-left ${
                         isSelected ? 'border-gray-900 bg-gray-50' : 'border-gray-100 bg-white hover:border-gray-200'
-                      }`}
-                    >
+                      }`}>
                       <span className="text-sm text-gray-900">{choice.label}</span>
                       <div className="flex items-center gap-3">
                         {choice.extraPrice > 0 && (
                           <span className="text-xs text-gray-500">+{formatFCFA(choice.extraPrice)}</span>
                         )}
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                           isSelected ? 'border-gray-900 bg-gray-900' : 'border-gray-300'
                         }`}>
                           {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
@@ -124,9 +295,8 @@ function ItemDetail({ item, onClose, onAdd }) {
           ))}
         </div>
 
-        {/* Footer */}
-        <div className="flex-shrink-0 px-5 pb-6 pt-3 border-t border-gray-100">
-          {/* Quantité */}
+        {/* Footer fixe */}
+        <div className="flex-shrink-0 px-4 pt-3 pb-6 border-t border-gray-100 bg-white">
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm font-medium text-gray-700">Quantité</span>
             <div className="flex items-center gap-3">
@@ -146,41 +316,39 @@ function ItemDetail({ item, onClose, onAdd }) {
             <p className="text-xs text-red-500 text-center mb-3">Veuillez compléter les choix obligatoires</p>
           )}
 
-          <button
-            onClick={handleAdd}
-            disabled={!canAdd}
+          <button onClick={handleAdd} disabled={!canAdd}
             className="w-full py-4 rounded-2xl text-white font-bold text-sm flex items-center justify-between px-5 active:scale-[0.98] transition-all disabled:opacity-50"
-            style={{ background: canAdd ? '#075E54' : '#9ca3af' }}
-          >
+            style={{ background: canAdd ? '#075E54' : '#9ca3af' }}>
             <span>Ajouter au panier</span>
             <span>{formatFCFA(total)}</span>
           </button>
         </div>
       </div>
-    </div>
+    </>
   )
 }
 
-// ── Carte plat — layout liste ────────────────────────────────────
+// ── Carte plat — grille 2 colonnes ──────────────────────────────
 function DishCard({ item, qty, onOpen, onAddDirect, onRemoveDirect }) {
   const [imgError, setImgError] = useState(false)
   const hasOptions = (item.optionGroups || []).length > 0
 
   return (
-    <div
-      className="bg-white rounded-2xl overflow-hidden border border-gray-100 flex items-stretch"
-      style={{ minHeight: '100px' }}
-    >
-      {/* Image cliquable → fiche détail */}
+    <div className="bg-white rounded-2xl overflow-hidden border border-gray-100">
+      {/* Image cliquable */}
       <div
         onClick={() => onOpen(item)}
-        className="relative flex-shrink-0 cursor-pointer active:opacity-80 transition-opacity"
-        style={{ width: '110px' }}
+        className="relative overflow-hidden cursor-pointer"
+        style={{ height: '130px' }}
       >
         {!imgError && item.imageUrl ? (
-          <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" onError={() => setImgError(true)} loading="lazy" />
+          <img src={item.imageUrl} alt={item.name}
+            className="w-full h-full object-cover object-center"
+            onError={() => setImgError(true)} loading="lazy" />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-orange-50 to-amber-100 flex items-center justify-center text-4xl">🍽️</div>
+          <div className="w-full h-full bg-gradient-to-br from-orange-50 to-amber-100 flex items-center justify-center text-4xl">
+            🍽️
+          </div>
         )}
         {qty > 0 && (
           <div className="absolute top-2 left-2 bg-gray-900 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">
@@ -190,32 +358,28 @@ function DishCard({ item, qty, onOpen, onAddDirect, onRemoveDirect }) {
       </div>
 
       {/* Contenu */}
-      <div onClick={() => onOpen(item)} className="flex-1 p-3 flex flex-col justify-between min-w-0 cursor-pointer">
-        <div>
-          <p className="text-sm font-semibold text-gray-900 leading-tight">{item.name}</p>
-          <p className="text-xs text-gray-400 mt-1 leading-relaxed line-clamp-2">{item.description}</p>
-        </div>
-        <div className="flex items-center justify-between mt-2">
+      <div className="p-3" onClick={() => onOpen(item)}>
+        <p className="text-sm font-semibold text-gray-900 leading-tight mb-1 line-clamp-1">{item.name}</p>
+        <p className="text-xs text-gray-400 leading-relaxed line-clamp-2 mb-2" style={{ minHeight: '32px' }}>{item.description}</p>
+        <div className="flex items-center justify-between">
           <p className="text-sm font-bold text-gray-900">{formatFCFA(item.price)}</p>
+          {/* Bouton + / contrôles quantité */}
           {!hasOptions && qty > 0 ? (
-            <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
               <button onClick={() => onRemoveDirect(item)}
                 className="w-7 h-7 rounded-full border-2 border-gray-200 flex items-center justify-center active:scale-90 transition-all">
-                <Minus size={12} className="text-gray-600" />
+                <Minus size={11} className="text-gray-600" />
               </button>
-              <span className="text-sm font-bold text-gray-900 w-4 text-center">{qty}</span>
+              <span className="text-xs font-bold text-gray-900 w-4 text-center">{qty}</span>
               <button onClick={() => onAddDirect(item)}
                 className="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center active:scale-90 transition-all">
-                <Plus size={12} className="text-white" />
+                <Plus size={11} className="text-white" />
               </button>
             </div>
           ) : (
             <button
-              onClick={e => {
-                e.stopPropagation()
-                if (hasOptions) { onOpen(item) } else { onAddDirect(item) }
-              }}
-              className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center flex-shrink-0 active:scale-90 transition-all"
+              onClick={e => { e.stopPropagation(); if (hasOptions) onOpen(item); else onAddDirect(item) }}
+              className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center active:scale-90 transition-all flex-shrink-0"
             >
               <Plus size={14} className="text-white" />
             </button>
@@ -266,11 +430,10 @@ function CartView({ cart, restaurant, onBack, onAdd, onRemove, slug, sid }) {
 
   if (orderSuccess) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen px-8 text-center bg-white"
-           style={{ animation: 'fadeIn 0.4s ease' }}>
+      <div className="flex flex-col items-center justify-center min-h-screen px-8 text-center bg-white">
         <style>{`
-          @keyframes fadeIn   { from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)} }
           @keyframes scaleIn  { 0%{transform:scale(0)}60%{transform:scale(1.2)}100%{transform:scale(1)} }
+          @keyframes fadeUp   { from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)} }
           @keyframes drawRing { from{stroke-dashoffset:220}to{stroke-dashoffset:0} }
           @keyframes drawCheck{ from{stroke-dashoffset:80}to{stroke-dashoffset:0} }
         `}</style>
@@ -286,11 +449,13 @@ function CartView({ cart, restaurant, onBack, onAdd, onRemove, slug, sid }) {
               style={{ animation: 'drawCheck 0.4s ease 0.7s forwards' }} />
           </svg>
         </div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2" style={{ animation: 'fadeIn 0.5s ease 0.3s both' }}>Commande envoyée !</h2>
-        <p className="text-sm text-gray-500 leading-relaxed mb-6" style={{ animation: 'fadeIn 0.5s ease 0.5s both' }}>
+        <h2 className="text-xl font-bold text-gray-900 mb-2" style={{ animation: 'fadeUp 0.5s ease 0.3s both' }}>
+          Commande envoyée !
+        </h2>
+        <p className="text-sm text-gray-500 leading-relaxed mb-6" style={{ animation: 'fadeUp 0.5s ease 0.5s both' }}>
           Vérifiez WhatsApp — le bot vous a envoyé votre commande automatiquement.
         </p>
-        <p className="text-xs text-gray-400" style={{ animation: 'fadeIn 0.5s ease 0.7s both' }}>
+        <p className="text-xs text-gray-400" style={{ animation: 'fadeUp 0.5s ease 0.7s both' }}>
           Pour une nouvelle commande, tapez <strong className="text-gray-600">menu</strong> sur WhatsApp.
         </p>
       </div>
@@ -319,7 +484,7 @@ function CartView({ cart, restaurant, onBack, onAdd, onRemove, slug, sid }) {
             </button>
           </div>
         ) : items.map(item => (
-          <div key={item.id} className="bg-white rounded-2xl p-4 flex items-start gap-3 border border-gray-100 shadow-sm">
+          <div key={item.cartKey || item.id} className="bg-white rounded-2xl p-4 flex items-start gap-3 border border-gray-100 shadow-sm">
             <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
               {item.imageUrl
                 ? <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
@@ -333,8 +498,8 @@ function CartView({ cart, restaurant, onBack, onAdd, onRemove, slug, sid }) {
                   {item.options.map(o => o.choices.join(', ')).join(' · ')}
                 </p>
               )}
-              <p className="text-xs text-gray-400 mt-0.5">{formatFCFA(item.unitPrice)} / unité</p>
-              <p className="text-sm font-bold text-gray-900 mt-1">{formatFCFA(item.unitPrice * item.qty)}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{formatFCFA(item.unitPrice || item.price)} / unité</p>
+              <p className="text-sm font-bold text-gray-900 mt-1">{formatFCFA((item.unitPrice || item.price) * item.qty)}</p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <button onClick={() => onRemove(item)}
@@ -412,7 +577,7 @@ export default function MenuPage() {
   const [search,     setSearch]     = useState('')
   const [activeCat,  setActiveCat]  = useState('Tous')
   const [showCart,   setShowCart]   = useState(false)
-  const [detail,     setDetail]     = useState(null) // plat ouvert en fiche détail
+  const [detail,     setDetail]     = useState(null)
 
   useEffect(() => {
     const load = async () => {
@@ -437,15 +602,13 @@ export default function MenuPage() {
     sessionStorage.setItem('skanema_cart_' + slug, JSON.stringify(cart))
   }, [cart, slug])
 
-  // Ajoute au panier avec options — clé unique par item+options
   const addToCart = useCallback((item, qty = 1, unitPrice = null, options = []) => {
     const price      = unitPrice !== null ? unitPrice : item.price
     const baseKey    = item._id || item.id
-    // Clé unique = id + options choisies (pour différencier même plat avec options différentes)
     const optionsKey = options.length > 0
-      ? options.map(o => o.choices.join(',')).join('|')
+      ? options.map(o => o.choices.join(',')).join('|').replace(/[^a-zA-Z0-9]/g, '')
       : ''
-    const key = optionsKey ? baseKey + '_' + optionsKey.replace(/[^a-zA-Z0-9]/g, '') : baseKey
+    const key = optionsKey ? baseKey + '_' + optionsKey : baseKey
     setCart(prev => ({
       ...prev,
       [key]: {
@@ -480,17 +643,14 @@ export default function MenuPage() {
     item.available
   )
 
-  // Statut ouverture
-  const isOpen = restaurant?.isOpen !== false
-  const openHint = restaurant?.openHint || ''
-
   if (loading) return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="space-y-3 mt-4">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="bg-white rounded-2xl overflow-hidden flex" style={{ height: '100px' }}>
-            <Skeleton className="w-28 h-full rounded-none" />
-            <div className="p-3 flex-1 space-y-2">
+    <div className="min-h-screen bg-white">
+      <Skeleton className="w-full rounded-none" style={{ height: '260px' }} />
+      <div className="p-4 grid grid-cols-2 gap-3 mt-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="bg-white rounded-2xl overflow-hidden border border-gray-100">
+            <Skeleton className="w-full rounded-none" style={{ height: '130px' }} />
+            <div className="p-3 space-y-2">
               <Skeleton className="h-4 w-3/4" />
               <Skeleton className="h-3 w-full" />
               <Skeleton className="h-3 w-1/2" />
@@ -515,75 +675,67 @@ export default function MenuPage() {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col" style={{ maxWidth: '480px', margin: '0 auto' }}>
+    <div className="min-h-screen bg-white flex flex-col" style={{ maxWidth: '480px', margin: '0 auto' }}>
 
-      {/* Header restaurant */}
-      <div className="bg-white border-b border-gray-100 flex-shrink-0">
-        <div className="px-4 pt-5 pb-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-bold text-gray-900">{restaurant?.name}</h1>
-              <div className="flex items-center gap-1.5 mt-1">
-                <div className={`w-2 h-2 rounded-full ${isOpen ? 'bg-green-500' : 'bg-red-400'}`} />
-                <span className={`text-xs font-medium ${isOpen ? 'text-green-600' : 'text-red-500'}`}>
-                  {isOpen ? 'Ouvert' : 'Fermé'}
-                </span>
-                {openHint && <span className="text-xs text-gray-400">· {openHint}</span>}
-              </div>
+      {/* Conteneur scrollable */}
+      <div id="menu-scroll" className="flex-1 overflow-y-auto">
+
+        {/* Header */}
+        <RestaurantHeader restaurant={restaurant} items={menuItems} />
+
+        {/* Badges info */}
+        <InfoBadges avgPrepTime={restaurant?.avgPrepTime || 30} />
+
+        {/* Recherche + catégories */}
+        <div className="bg-white sticky top-0 z-10 border-b border-gray-100">
+          <div className="px-4 pt-3 pb-2">
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher un plat…"
+                className="w-full bg-gray-100 rounded-xl pl-9 pr-4 py-2.5 text-sm text-gray-700 outline-none"
+                style={{ fontSize: '16px' }} />
             </div>
-            <div className="w-14 h-14 rounded-2xl bg-orange-50 flex items-center justify-center text-3xl flex-shrink-0">🏠</div>
           </div>
-        </div>
-
-        <div className="px-4 pb-3">
-          <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher un plat…"
-              className="w-full bg-gray-100 rounded-xl pl-9 pr-4 py-2.5 text-sm text-gray-700 outline-none"
-              style={{ fontSize: '16px' }} />
-          </div>
-        </div>
-
-        <div className="flex gap-2 px-4 pb-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-          {categories.map(cat => (
-            <button key={cat} onClick={() => setActiveCat(cat)}
-              className={`whitespace-nowrap text-xs font-medium px-3 py-1.5 rounded-full transition-all flex-shrink-0 ${
-                activeCat === cat ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500'
-              }`}>
-              {cat}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Liste plats */}
-      <div className="flex-1 px-4 py-4">
-        {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="text-4xl mb-3">🔍</div>
-            <p className="text-sm font-medium text-gray-700">Aucun plat trouvé</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filtered.map(item => (
-              <DishCard
-                key={item._id}
-                item={item}
-                qty={Object.values(cart).filter(c => c.id === item._id).reduce((s, c) => s + c.qty, 0)}
-                onOpen={setDetail}
-                onAddDirect={(item) => addToCart(item, 1, null, [])}
-                onRemoveDirect={(item) => removeFromCart({ ...item, cartKey: item._id || item.id })}
-              />
+          <div className="flex gap-2 px-4 pb-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+            {categories.map(cat => (
+              <button key={cat} onClick={() => setActiveCat(cat)}
+                className={`whitespace-nowrap text-xs font-medium px-3 py-1.5 rounded-full transition-all flex-shrink-0 ${
+                  activeCat === cat ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500'
+                }`}>
+                {cat}
+              </button>
             ))}
           </div>
-        )}
-        <div style={{ height: cartCount > 0 ? '80px' : '16px' }} />
+        </div>
+
+        {/* Grille plats 2 colonnes */}
+        <div className="px-4 py-4">
+          {filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="text-4xl mb-3">🔍</div>
+              <p className="text-sm font-medium text-gray-700">Aucun plat trouvé</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {filtered.map(item => (
+                <DishCard
+                  key={item._id}
+                  item={item}
+                  qty={Object.values(cart).filter(c => c.id === item._id).reduce((s, c) => s + c.qty, 0)}
+                  onOpen={setDetail}
+                  onAddDirect={(item) => addToCart(item, 1, null, [])}
+                  onRemoveDirect={(item) => removeFromCart({ ...item, cartKey: item._id || item.id })}
+                />
+              ))}
+            </div>
+          )}
+          <div style={{ height: cartCount > 0 ? '80px' : '16px' }} />
+        </div>
       </div>
 
-      {/* Barre panier */}
+      {/* Barre panier flottante */}
       {cartCount > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 px-4 pb-6 pt-2"
-             style={{ maxWidth: '480px', left: '50%', transform: 'translateX(-50%)', width: '100%' }}>
+        <div className="flex-shrink-0 px-4 pb-6 pt-2 bg-white border-t border-gray-100">
           <button onClick={() => setShowCart(true)}
             className="w-full text-white py-4 rounded-2xl font-bold text-sm flex items-center justify-between px-5 shadow-lg active:scale-[0.98] transition-all"
             style={{ background: '#075E54' }}>
