@@ -4,6 +4,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Loader2, CheckCircle2, Store, Lock, Bell } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import api from '@/lib/api'
+import { ImageUpload } from '@/components/ui/ImageUpload'
 
 const PLAN_LIMITS = { basic: 10, pro: 25, premium: 999 }
 const PLAN_PRICE  = { basic: 15000, pro: 35000, premium: 75000 }
