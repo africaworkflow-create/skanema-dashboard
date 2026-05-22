@@ -10,7 +10,7 @@ export function DashboardLayout({ children, title, subtitle, actions }) {
   const { user } = useAuth()
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Main */}

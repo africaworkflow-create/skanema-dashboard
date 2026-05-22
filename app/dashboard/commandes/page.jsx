@@ -188,11 +188,23 @@ export default function CommandesPage() {
                         {/* Articles */}
                         <div>
                           <p className="text-xs font-medium text-gray-500 mb-2">Articles commandés</p>
-                          <div className="space-y-1.5">
+                          <div className="space-y-2">
                             {order.items?.map((item, j) => (
-                              <div key={j} className="flex justify-between text-xs">
-                                <span className="text-gray-700">{item.name} <span className="text-gray-400">×{item.quantity}</span></span>
-                                <span className="text-gray-900 font-medium">{formatFCFA(item.subtotal)}</span>
+                              <div key={j}>
+                                <div className="flex justify-between text-xs">
+                                  <span className="text-gray-700">{item.name} <span className="text-gray-400">×{item.quantity}</span></span>
+                                  <span className="text-gray-900 font-medium">{formatFCFA(item.subtotal)}</span>
+                                </div>
+                                {item.options?.length > 0 && (
+                                  <p className="text-2xs text-gray-400 mt-0.5 ml-2 italic">
+                                    {item.options.map(o => o.choices.join(', ')).join(' · ')}
+                                  </p>
+                                )}
+                                {item.unitPrice && item.unitPrice !== item.price && (
+                                  <p className="text-2xs text-gray-400 ml-2">
+                                    {formatFCFA(item.unitPrice)} / unité (avec options)
+                                  </p>
+                                )}
                               </div>
                             ))}
                           </div>

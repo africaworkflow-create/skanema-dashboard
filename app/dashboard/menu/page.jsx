@@ -178,13 +178,13 @@ export default function MenuPage() {
     }))
   }
 
-  const grouped = CATEGORIES.reduce((acc, cat) => {
+  // Ordre basé sur l'apparition réelle des items, pas une liste fixe
+  const allCats = [...new Set(items.map(i => i.category).filter(Boolean))]
+  const grouped = allCats.reduce((acc, cat) => {
     const catItems = items.filter(i => i.category === cat)
     if (catItems.length) acc[cat] = catItems
     return acc
   }, {})
-  const others = items.filter(i => !CATEGORIES.includes(i.category))
-  if (others.length) grouped['Autres'] = others
 
   return (
     <DashboardLayout
@@ -330,9 +330,19 @@ export default function MenuPage() {
 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1.5">Catégorie</label>
-                <select value={form.category} onChange={e => setForm(f => ({...f, category: e.target.value}))} className="input">
-                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
+                <input
+                  value={form.category}
+                  onChange={e => setForm(f => ({...f, category: e.target.value}))}
+                  placeholder="Ex: Plats principaux, Boissons…"
+                  list="categories-list"
+                  className="input"
+                />
+                <datalist id="categories-list">
+                  {[...new Set([...CATEGORIES, ...items.map(i => i.category).filter(Boolean)])].map(c => (
+                    <option key={c} value={c} />
+                  ))}
+                </datalist>
+                <p className="text-2xs text-gray-400 mt-1">Tapez ou choisissez une catégorie existante</p>
               </div>
 
               <div>
