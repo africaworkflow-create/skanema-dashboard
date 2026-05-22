@@ -261,7 +261,7 @@ function ItemDetail({ item, onClose, onAdd }) {
           {!canAdd && <p className="text-xs text-red-500 text-center mb-3">Veuillez compléter les choix obligatoires</p>}
           <button onClick={handleAdd} disabled={!canAdd}
             className="w-full py-4 rounded-2xl text-white font-bold text-sm flex items-center justify-between px-5 active:scale-[0.98] transition-all disabled:opacity-50"
-            style={{ background: canAdd ? '#075E54' : '#9ca3af' }}>
+            style={{ background: canAdd ? '#111827' : '#9ca3af' }}>
             <span>Ajouter au panier</span>
             <span>{formatFCFA(total)}</span>
           </button>
@@ -591,7 +591,7 @@ export default function MenuPage() {
              style={{ maxWidth: '480px', width: '100%', left: '50%', transform: 'translateX(-50%)' }}>
           <button onClick={() => setShowCart(true)}
             className="w-full text-white py-4 rounded-2xl font-bold text-sm flex items-center justify-between px-5 active:scale-[0.98] transition-all"
-            style={{ background: '#075E54' }}>
+            style={{ background: '#111827' }}>
             <div className="bg-white/20 rounded-lg px-2 py-1 text-xs font-bold">{cartCount}</div>
             <span>Voir mon panier</span>
             <span>{formatFCFA(cartTotal)}</span>
