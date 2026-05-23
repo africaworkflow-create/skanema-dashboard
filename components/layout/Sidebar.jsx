@@ -62,11 +62,11 @@ export function Sidebar({ open, onClose }) {
 
       {/* Sidebar */}
       <aside className={cn(
-        'fixed top-0 left-0 w-[220px] bg-white border-r border-gray-100 z-40',
+        'fixed top-0 left-0 h-full w-[220px] bg-white border-r border-gray-100 z-40',
         'flex flex-col transition-transform duration-200',
         'lg:translate-x-0 lg:static lg:z-auto',
         open ? 'translate-x-0' : '-translate-x-full'
-      )} style={{ height: '100dvh' }}>
+      )}>
 
         {/* Logo */}
         <div className="flex items-center justify-between px-5 py-5 border-b border-gray-100">
