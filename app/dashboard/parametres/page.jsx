@@ -235,7 +235,7 @@ export default function ParametresPage() {
           </div>
         )}
 
-        {/* Plan */}
+       {/* Plan */}
         <div className="bg-gray-50 border border-gray-100 rounded-xl p-5">
           <div className="flex items-center justify-between mb-3">
             <div>
@@ -266,14 +266,25 @@ export default function ParametresPage() {
             </>
           )}
 
-          <a
-            href="https://wa.me/221784632103?text=Bonjour%20Skanema%2C%20je%20souhaite%20passer%20à%20un%20plan%20payant."
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-primary text-xs py-2 inline-block"
-          >
-            Passer à un plan payant
-          </a>
+          {user?.subscription?.status === 'active' ? (
+            <p className="text-xs text-green-600 font-medium">
+              Abonnement actif
+              {user?.subscription?.renewsAt && (
+                <span className="text-gray-400 font-normal ml-1">
+                  · Renouvellement le {new Date(user.subscription.renewsAt).toLocaleDateString('fr-FR')}
+                </span>
+              )}
+            </p>
+          ) : (
+            <a
+              href="https://wa.me/221784632103?text=Bonjour%20Skanema%2C%20je%20souhaite%20passer%20%C3%A0%20un%20plan%20payant."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary text-xs py-2 inline-block"
+            >
+              Passer à un plan payant
+            </a>
+          )}
         </div>
       </div>
     </DashboardLayout>
