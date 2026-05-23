@@ -188,25 +188,55 @@ export default function CommandesPage() {
                         {/* Articles */}
                         <div>
                           <p className="text-xs font-medium text-gray-500 mb-2">Articles commandés</p>
-                          <div className="space-y-2">
-                            {order.items?.map((item, j) => (
-                              <div key={j}>
-                                <div className="flex justify-between text-xs">
-                                  <span className="text-gray-700">{item.name} <span className="text-gray-400">×{item.quantity}</span></span>
-                                  <span className="text-gray-900 font-medium">{formatFCFA(item.subtotal)}</span>
+                          <div className="space-y-3">
+                            {order.items?.map((item, j) => {
+                              const unitPrice   = item.unitPrice || item.price
+                              const realSubtotal = unitPrice * item.quantity
+                              const hasOptions   = item.options?.length > 0
+                              const extraTotal   = unitPrice - item.price
+
+                              return (
+                                <div key={j} className={hasOptions ? 'bg-white rounded-lg p-2.5 border border-gray-100' : ''}>
+                                  {/* Nom + total */}
+                                  <div className="flex justify-between text-xs">
+                                    <span className="font-medium text-gray-900">
+                                      {item.name}
+                                      <span className="text-gray-400 font-normal ml-1">×{item.quantity}</span>
+                                    </span>
+                                    <span className="font-semibold text-gray-900 ml-2 flex-shrink-0">
+                                      {formatFCFA(realSubtotal)}
+                                    </span>
+                                  </div>
+
+                                  {/* Détail options */}
+                                  {hasOptions && (
+                                    <div className="mt-1.5 space-y-0.5">
+                                      <div className="flex justify-between text-2xs text-gray-400">
+                                        <span>Prix de base</span>
+                                        <span>{formatFCFA(item.price)}</span>
+                                      </div>
+                                      {item.options.map((opt, oi) => (
+                                        <div key={oi}>
+                                          {opt.choices.map((choice, ci) => (
+                                            <div key={ci} className="flex justify-between text-2xs text-gray-500">
+                                              <span className="flex items-center gap-1">
+                                                <span className="text-gray-300">+</span> {choice}
+                                              </span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ))}
+                                      {extraTotal > 0 && (
+                                        <div className="flex justify-between text-2xs font-medium text-gray-700 border-t border-gray-100 pt-1 mt-1">
+                                          <span>Total / unité</span>
+                                          <span>{formatFCFA(unitPrice)}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
-                                {item.options?.length > 0 && (
-                                  <p className="text-2xs text-gray-400 mt-0.5 ml-2 italic">
-                                    {item.options.map(o => o.choices.join(', ')).join(' · ')}
-                                  </p>
-                                )}
-                                {item.unitPrice && item.unitPrice !== item.price && (
-                                  <p className="text-2xs text-gray-400 ml-2">
-                                    {formatFCFA(item.unitPrice)} / unité (avec options)
-                                  </p>
-                                )}
-                              </div>
-                            ))}
+                              )
+                            })}
                           </div>
                           <div className="border-t border-gray-100 mt-2 pt-2 space-y-1">
                             <div className="flex justify-between text-xs text-gray-400">
