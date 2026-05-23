@@ -42,6 +42,8 @@ export default function MenuPage() {
   const [error,      setError]      = useState('')
   const [deleteConf, setDeleteConf] = useState(null)
   const [showOptions,setShowOptions]= useState(false)
+  const [showCatPicker, setShowCatPicker] = useState(false)
+  const [newCatInput,   setNewCatInput]   = useState('')
   const firstInput                  = useRef(null)
 
   const load = async () => {
@@ -328,21 +330,69 @@ export default function MenuPage() {
                 </div>
               </div>
 
-              <div>
+              <div className="relative">
                 <label className="block text-xs font-medium text-gray-700 mb-1.5">Catégorie</label>
-                <input
-                  value={form.category}
-                  onChange={e => setForm(f => ({...f, category: e.target.value}))}
-                  placeholder="Ex: Plats principaux, Boissons…"
-                  list="categories-list"
-                  className="input"
-                />
-                <datalist id="categories-list">
-                  {[...new Set([...CATEGORIES, ...items.map(i => i.category).filter(Boolean)])].map(c => (
-                    <option key={c} value={c} />
-                  ))}
-                </datalist>
-                <p className="text-2xs text-gray-400 mt-1">Tapez ou choisissez une catégorie existante</p>
+                <button
+                  type="button"
+                  onClick={() => setShowCatPicker(!showCatPicker)}
+                  className="input text-left flex items-center justify-between w-full"
+                >
+                  <span className={form.category ? 'text-gray-900' : 'text-gray-400'}>
+                    {form.category || 'Choisir une catégorie…'}
+                  </span>
+                  <ChevronDown size={14} className={`text-gray-400 transition-transform flex-shrink-0 ${showCatPicker ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showCatPicker && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+                    {/* Catégories existantes */}
+                    <div className="max-h-44 overflow-y-auto">
+                      {[...new Set([...CATEGORIES, ...items.map(i => i.category).filter(Boolean)])].map(c => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => { setForm(f => ({...f, category: c})); setShowCatPicker(false) }}
+                          className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors ${
+                            form.category === c ? 'bg-gray-50 font-medium text-gray-900' : 'text-gray-700'
+                          }`}
+                        >
+                          {c}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Ajouter une nouvelle catégorie */}
+                    <div className="border-t border-gray-100 p-2 flex gap-2">
+                      <input
+                        value={newCatInput}
+                        onChange={e => setNewCatInput(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && newCatInput.trim()) {
+                            setForm(f => ({...f, category: newCatInput.trim()}))
+                            setNewCatInput('')
+                            setShowCatPicker(false)
+                          }
+                        }}
+                        placeholder="Nouvelle catégorie…"
+                        style={{ fontSize: '16px' }}
+                        className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (newCatInput.trim()) {
+                            setForm(f => ({...f, category: newCatInput.trim()}))
+                            setNewCatInput('')
+                            setShowCatPicker(false)
+                          }
+                        }}
+                        className="w-9 h-9 rounded-lg bg-gray-900 text-white flex items-center justify-center flex-shrink-0"
+                      >
+                        <Plus size={16} />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>
