@@ -7,6 +7,7 @@ import {
   MapPin, MessageCircle, Settings, LogOut, X, Wifi, WifiOff, Clock, CreditCard
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useEffect } from 'react'
 
 const NAV = [
   { href: '/dashboard',             label: 'Vue d\'ensemble', icon: LayoutDashboard },
@@ -45,6 +46,16 @@ function NavItem({ href, label, icon: Icon, onClick }) {
 
 export function Sidebar({ open, onClose }) {
   const { user, logout } = useAuth()
+
+  // Bloque le scroll du body quand la sidebar est ouverte sur mobile
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [open])
 
   // whatsappPhoneNumberId chargé une fois dans useAuth via /api/auth/me
   const pid       = user?.whatsappPhoneNumberId
