@@ -368,7 +368,10 @@ export default function MenuPage() {
                         onChange={e => setNewCatInput(e.target.value)}
                         onKeyDown={e => {
                           if (e.key === 'Enter' && newCatInput.trim()) {
-                            setForm(f => ({...f, category: newCatInput.trim()}))
+                            const val = newCatInput.trim()
+                            const allCatsList = [...new Set([...CATEGORIES, ...items.map(i => i.category).filter(Boolean)])]
+                            const existing = allCatsList.find(c => c.toLowerCase() === val.toLowerCase())
+                            setForm(f => ({...f, category: existing || val}))
                             setNewCatInput('')
                             setShowCatPicker(false)
                           }
@@ -380,11 +383,14 @@ export default function MenuPage() {
                       <button
                         type="button"
                         onClick={() => {
-                          if (newCatInput.trim()) {
-                            setForm(f => ({...f, category: newCatInput.trim()}))
-                            setNewCatInput('')
-                            setShowCatPicker(false)
-                          }
+                          const val = newCatInput.trim()
+                          if (!val) return
+                          // Cherche si une catégorie existante correspond (insensible casse)
+                          const allCatsList = [...new Set([...CATEGORIES, ...items.map(i => i.category).filter(Boolean)])]
+                          const existing = allCatsList.find(c => c.toLowerCase() === val.toLowerCase())
+                          setForm(f => ({...f, category: existing || val}))
+                          setNewCatInput('')
+                          setShowCatPicker(false)
                         }}
                         className="w-9 h-9 rounded-lg bg-gray-900 text-white flex items-center justify-center flex-shrink-0"
                       >
