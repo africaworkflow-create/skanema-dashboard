@@ -3,115 +3,133 @@ export const metadata = {
   description: 'Politique de confidentialité et protection des données personnelles de Skanema.',
 }
 
+const Section = ({ title, children }) => (
+  <section>
+    <h2 style={{ fontSize:'11px', fontWeight:500, textTransform:'uppercase', letterSpacing:'0.1em', color:'#888', margin:'0 0 20px' }}>{title}</h2>
+    {children}
+  </section>
+)
+
+const Block = ({ children }) => (
+  <div style={{ background:'#f9f9f9', border:'0.5px solid #e5e5e5', borderRadius:'12px', padding:'20px 24px' }}>
+    {children}
+  </div>
+)
+
+const Item = ({ label, value }) => (
+  <div style={{ display:'flex', justifyContent:'space-between', padding:'10px 0', borderBottom:'0.5px solid #e5e5e5', gap:'24px' }}>
+    <span style={{ fontSize:'13px', color:'#888', flexShrink:0 }}>{label}</span>
+    <span style={{ fontSize:'13px', color:'#333', fontWeight:500, textAlign:'right' }}>{value}</span>
+  </div>
+)
+
 export default function PolitiqueConfidentialite() {
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-3xl mx-auto px-5 py-16">
-        <a href="/" className="text-sm text-gray-400 hover:text-gray-600 mb-8 inline-block">← Retour</a>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Politique de confidentialité</h1>
-        <p className="text-sm text-gray-400 mb-10">Dernière mise à jour : juin 2026</p>
+    <div style={{ maxWidth:'720px', margin:'0 auto', padding:'48px 24px', fontFamily:'system-ui,sans-serif' }}>
 
-        <div className="space-y-8 text-sm text-gray-700 leading-relaxed">
+      <a href="/" style={{ fontSize:'13px', color:'#888', textDecoration:'none', display:'inline-flex', alignItems:'center', gap:'6px', marginBottom:'40px' }}>
+        ← Retour
+      </a>
 
-          <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-3">1. Responsable du traitement</h2>
-            <p>TERYAT SUARL, éditeur de la plateforme Skanema, est responsable du traitement de vos données personnelles. Contact : <a href="mailto:contact@skanema.com" className="text-gray-900 underline">contact@skanema.com</a></p>
-          </section>
+      <div style={{ borderBottom:'0.5px solid #e5e5e5', paddingBottom:'32px', marginBottom:'48px' }}>
+        <p style={{ fontSize:'12px', fontWeight:500, color:'#888', textTransform:'uppercase', letterSpacing:'0.08em', margin:'0 0 12px' }}>Légal</p>
+        <h1 style={{ fontSize:'32px', fontWeight:500, color:'#111', margin:'0 0 8px', lineHeight:1.2 }}>Politique de confidentialité</h1>
+        <p style={{ fontSize:'14px', color:'#888', margin:0 }}>Dernière mise à jour : juin 2026</p>
+      </div>
 
-          <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-3">2. Données collectées</h2>
-            <div className="space-y-4">
-              <div>
-                <p className="font-medium text-gray-800 mb-2">Données des restaurants (professionnels) :</p>
-                <ul className="list-disc list-inside space-y-1 text-gray-600 ml-2">
-                  <li>Nom du restaurant, adresse, type de cuisine</li>
-                  <li>Adresse email et mot de passe (hashé)</li>
-                  <li>Numéro de téléphone professionnel</li>
-                  <li>Coordonnées GPS du restaurant</li>
-                  <li>Informations de paiement Wave (clé API, chiffrée)</li>
-                  <li>Photo de couverture et images des plats</li>
-                  <li>Données de commandes reçues</li>
-                </ul>
-              </div>
-              <div>
-                <p className="font-medium text-gray-800 mb-2">Données des clients finaux (via WhatsApp) :</p>
-                <ul className="list-disc list-inside space-y-1 text-gray-600 ml-2">
-                  <li>Numéro de téléphone WhatsApp</li>
-                  <li>Localisation GPS partagée lors de la commande</li>
-                  <li>Historique des commandes passées</li>
-                </ul>
-              </div>
-            </div>
-          </section>
+      <div style={{ display:'grid', gap:'48px' }}>
 
-          <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-3">3. Finalités du traitement</h2>
-            <ul className="list-disc list-inside space-y-1 text-gray-600 ml-2">
-              <li>Fourniture du service de commande en ligne via WhatsApp</li>
-              <li>Gestion des comptes restaurants et authentification</li>
-              <li>Traitement et suivi des commandes</li>
-              <li>Calcul des frais de livraison selon la localisation</li>
-              <li>Envoi de notifications WhatsApp liées aux commandes</li>
-              <li>Facturation et gestion des abonnements</li>
-              <li>Amélioration du service et statistiques d'usage</li>
-            </ul>
-          </section>
+        <Section title="Responsable du traitement">
+          <p style={{ fontSize:'15px', color:'#333', lineHeight:1.75, margin:0 }}>
+            TERYAT SUARL, éditeur de la plateforme Skanema, est responsable du traitement de vos données personnelles.
+            Contact : <a href="mailto:contact@skanema.com" style={{ color:'#111', fontWeight:500, textDecoration:'none' }}>contact@skanema.com</a>
+          </p>
+        </Section>
 
-          <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-3">4. Base légale</h2>
-            <p>Le traitement de vos données repose sur l'exécution du contrat (CGU/CGV acceptées lors de l'inscription) et sur l'intérêt légitime de TERYAT SUARL à améliorer ses services.</p>
-          </section>
+        <Section title="Données collectées">
+          <div style={{ display:'grid', gap:'12px' }}>
+            <Block>
+              <p style={{ fontSize:'12px', fontWeight:500, color:'#888', textTransform:'uppercase', letterSpacing:'0.06em', margin:'0 0 14px' }}>Restaurants (professionnels)</p>
+              {['Nom, adresse et type de cuisine', 'Adresse email et mot de passe (hashé bcrypt)', 'Numéro de téléphone professionnel', 'Coordonnées GPS du restaurant', 'Informations de paiement Wave (chiffrées)', 'Photos et images des plats', 'Données de commandes reçues'].map((item, i, arr) => (
+                <div key={i} style={{ fontSize:'14px', color:'#333', padding:'8px 0', borderBottom: i < arr.length-1 ? '0.5px solid #e5e5e5' : 'none' }}>{item}</div>
+              ))}
+            </Block>
+            <Block>
+              <p style={{ fontSize:'12px', fontWeight:500, color:'#888', textTransform:'uppercase', letterSpacing:'0.06em', margin:'0 0 14px' }}>Clients finaux (via WhatsApp)</p>
+              {['Numéro de téléphone WhatsApp', 'Localisation GPS partagée lors de la commande', 'Historique des commandes'].map((item, i, arr) => (
+                <div key={i} style={{ fontSize:'14px', color:'#333', padding:'8px 0', borderBottom: i < arr.length-1 ? '0.5px solid #e5e5e5' : 'none' }}>{item}</div>
+              ))}
+            </Block>
+          </div>
+        </Section>
 
-          <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-3">5. Durée de conservation</h2>
-            <div className="bg-gray-50 rounded-xl p-5 space-y-2">
-              <p><span className="text-gray-500">Données de compte :</span> Durée de l'abonnement + 3 ans après résiliation</p>
-              <p><span className="text-gray-500">Données de commandes :</span> 5 ans (obligations comptables)</p>
-              <p><span className="text-gray-500">Sessions WhatsApp :</span> 30 jours d'inactivité puis suppression automatique</p>
-              <p><span className="text-gray-500">Logs techniques :</span> 90 jours</p>
-            </div>
-          </section>
+        <Section title="Finalités du traitement">
+          <Block>
+            {['Fourniture du service de commande en ligne via WhatsApp', 'Gestion des comptes restaurants et authentification', 'Traitement et suivi des commandes', 'Calcul des frais de livraison selon la localisation', 'Envoi de notifications WhatsApp liées aux commandes', 'Facturation et gestion des abonnements', 'Amélioration du service et statistiques d\'usage'].map((item, i, arr) => (
+              <div key={i} style={{ fontSize:'14px', color:'#333', padding:'8px 0', borderBottom: i < arr.length-1 ? '0.5px solid #e5e5e5' : 'none' }}>{item}</div>
+            ))}
+          </Block>
+        </Section>
 
-          <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-3">6. Partage des données</h2>
-            <p className="mb-3">Vos données ne sont jamais vendues à des tiers. Elles peuvent être partagées avec :</p>
-            <ul className="list-disc list-inside space-y-1 text-gray-600 ml-2">
-              <li><strong>Meta Platforms</strong> — pour le service WhatsApp Business API</li>
-              <li><strong>Wave</strong> — pour le traitement des paiements</li>
-              <li><strong>Cloudinary</strong> — pour le stockage des images</li>
-              <li><strong>MongoDB Atlas</strong> — pour le stockage des données</li>
-            </ul>
-          </section>
+        <Section title="Durée de conservation">
+          <div style={{ display:'grid', gap:'1px', background:'#e5e5e5', border:'0.5px solid #e5e5e5', borderRadius:'12px', overflow:'hidden' }}>
+            {[
+              ['Données de compte',    'Durée de l\'abonnement + 3 ans après résiliation'],
+              ['Données de commandes', '5 ans (obligations comptables)'],
+              ['Sessions WhatsApp',    '30 jours d\'inactivité puis suppression automatique'],
+              ['Logs techniques',      '90 jours'],
+            ].map(([label, value]) => (
+              <Item key={label} label={label} value={value} />
+            ))}
+          </div>
+        </Section>
 
-          <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-3">7. Vos droits</h2>
-            <p className="mb-3">Conformément aux lois applicables, vous disposez des droits suivants :</p>
-            <ul className="list-disc list-inside space-y-1 text-gray-600 ml-2">
-              <li>Droit d'accès à vos données</li>
-              <li>Droit de rectification</li>
-              <li>Droit à l'effacement (droit à l'oubli)</li>
-              <li>Droit à la portabilité</li>
-              <li>Droit d'opposition au traitement</li>
-            </ul>
-            <p className="mt-3">Pour exercer ces droits : <a href="mailto:contact@skanema.com" className="text-gray-900 underline">contact@skanema.com</a></p>
-          </section>
+        <Section title="Partage des données">
+          <p style={{ fontSize:'15px', color:'#333', lineHeight:1.75, margin:'0 0 16px' }}>
+            Vos données ne sont jamais vendues à des tiers. Elles peuvent être partagées uniquement avec nos prestataires techniques dans le cadre strict de la fourniture du service.
+          </p>
+          <div style={{ display:'grid', gap:'1px', background:'#e5e5e5', border:'0.5px solid #e5e5e5', borderRadius:'12px', overflow:'hidden' }}>
+            {[
+              ['Meta Platforms', 'Service WhatsApp Business API'],
+              ['Wave',           'Traitement des paiements'],
+              ['Cloudinary',     'Stockage des images'],
+              ['MongoDB Atlas',  'Stockage des données'],
+              ['Railway / Vercel','Infrastructure d\'hébergement'],
+            ].map(([label, value]) => (
+              <Item key={label} label={label} value={value} />
+            ))}
+          </div>
+        </Section>
 
-          <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-3">8. Sécurité</h2>
-            <p>TERYAT SUARL met en œuvre les mesures techniques et organisationnelles appropriées pour protéger vos données : chiffrement des mots de passe (bcrypt), communications HTTPS, accès restreints aux données, tokens JWT pour l'authentification, rate limiting sur les API.</p>
-          </section>
+        <Section title="Vos droits">
+          <p style={{ fontSize:'15px', color:'#333', lineHeight:1.75, margin:'0 0 16px' }}>
+            Conformément aux lois applicables, vous disposez d'un droit d'accès, de rectification, d'effacement, de portabilité et d'opposition au traitement de vos données personnelles.
+          </p>
+          <p style={{ fontSize:'15px', color:'#333', lineHeight:1.75, margin:0 }}>
+            Pour exercer ces droits :{' '}
+            <a href="mailto:contact@skanema.com" style={{ color:'#111', fontWeight:500, textDecoration:'none' }}>contact@skanema.com</a>
+          </p>
+        </Section>
 
-          <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-3">9. Cookies</h2>
-            <p>Le site skanema.com utilise uniquement des cookies techniques nécessaires au fonctionnement du service (authentification, session). Aucun cookie publicitaire ou de tracking tiers n'est utilisé.</p>
-          </section>
+        <Section title="Sécurité">
+          <p style={{ fontSize:'15px', color:'#333', lineHeight:1.75, margin:0 }}>
+            TERYAT SUARL met en œuvre les mesures techniques appropriées pour protéger vos données : chiffrement des mots de passe (bcrypt), communications HTTPS, authentification par tokens JWT, rate limiting sur les API et accès restreints aux bases de données.
+          </p>
+        </Section>
 
-          <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-3">10. Contact</h2>
-            <p>Pour toute question relative à la protection de vos données : <a href="mailto:contact@skanema.com" className="text-gray-900 underline">contact@skanema.com</a></p>
-          </section>
+        <Section title="Cookies">
+          <p style={{ fontSize:'15px', color:'#333', lineHeight:1.75, margin:0 }}>
+            Le site skanema.com utilise uniquement des cookies techniques nécessaires au fonctionnement du service (authentification, session). Aucun cookie publicitaire ou de tracking tiers n'est utilisé.
+          </p>
+        </Section>
 
-        </div>
+        <section style={{ borderTop:'0.5px solid #e5e5e5', paddingTop:'32px' }}>
+          <p style={{ fontSize:'13px', color:'#888', margin:0 }}>
+            Pour toute question :{' '}
+            <a href="mailto:contact@skanema.com" style={{ color:'#111', fontWeight:500, textDecoration:'none' }}>contact@skanema.com</a>
+          </p>
+        </section>
+
       </div>
     </div>
   )

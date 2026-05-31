@@ -3,55 +3,69 @@ export const metadata = {
   description: 'Mentions légales de Skanema, une solution TERYAT SUARL.',
 }
 
+const Row = ({ label, value }) => (
+  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'14px 20px', background:'var(--color-background-primary)', gap:'24px' }}>
+    <span style={{ fontSize:'13px', color:'var(--color-text-secondary)', flexShrink:0 }}>{label}</span>
+    <span style={{ fontSize:'13px', color:'var(--color-text-primary)', fontWeight:500, textAlign:'right' }}>{value}</span>
+  </div>
+)
+
 export default function MentionsLegales() {
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-3xl mx-auto px-5 py-16">
-        <a href="/" className="text-sm text-gray-400 hover:text-gray-600 mb-8 inline-block">← Retour</a>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Mentions légales</h1>
-        <p className="text-sm text-gray-400 mb-10">Dernière mise à jour : juin 2026</p>
+    <div style={{ maxWidth:'720px', margin:'0 auto', padding:'48px 24px', fontFamily:'system-ui,sans-serif' }}>
 
-        <div className="space-y-8 text-sm text-gray-700 leading-relaxed">
+      <a href="/" style={{ fontSize:'13px', color:'#888', textDecoration:'none', display:'inline-flex', alignItems:'center', gap:'6px', marginBottom:'40px' }}>
+        ← Retour
+      </a>
 
-          <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-3">Éditeur du site</h2>
-            <div className="bg-gray-50 rounded-xl p-5 space-y-1.5">
-              <p><span className="text-gray-500">Raison sociale :</span> TERYAT SUARL</p>
-              <p><span className="text-gray-500">Forme juridique :</span> Société Unipersonnelle à Responsabilité Limitée (SUARL)</p>
-              <p><span className="text-gray-500">NINEA :</span> 012949957</p>
-              <p><span className="text-gray-500">Registre de commerce :</span> SN DKR 2026 B 12120</p>
-              <p><span className="text-gray-500">Siège social :</span> Nord Foire Diamalaye III, Villa N°238, Dakar, Sénégal</p>
-              <p><span className="text-gray-500">Représentant légal :</span> Le Gérant</p>
-              <p><span className="text-gray-500">Email :</span> <a href="mailto:contact@skanema.com" className="text-gray-900 underline">contact@skanema.com</a></p>
-            </div>
-          </section>
+      <div style={{ borderBottom:'0.5px solid #e5e5e5', paddingBottom:'32px', marginBottom:'48px' }}>
+        <p style={{ fontSize:'12px', fontWeight:500, color:'#888', textTransform:'uppercase', letterSpacing:'0.08em', margin:'0 0 12px' }}>Légal</p>
+        <h1 style={{ fontSize:'32px', fontWeight:500, color:'#111', margin:'0 0 8px', lineHeight:1.2 }}>Mentions légales</h1>
+        <p style={{ fontSize:'14px', color:'#888', margin:0 }}>Dernière mise à jour : juin 2026</p>
+      </div>
 
-          <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-3">Hébergement</h2>
-            <div className="bg-gray-50 rounded-xl p-5 space-y-1.5">
-              <p><span className="text-gray-500">Frontend (skanema.com) :</span> Vercel Inc. — 340 Pine Street, Suite 701, San Francisco, CA 94104, USA</p>
-              <p><span className="text-gray-500">Backend (api.skanema.com) :</span> Railway Corporation — San Francisco, CA, USA</p>
-              <p><span className="text-gray-500">Base de données :</span> MongoDB Atlas — MongoDB Inc., New York, USA</p>
-              <p><span className="text-gray-500">Nom de domaine :</span> OVH SAS — 2 rue Kellermann, 59100 Roubaix, France</p>
-            </div>
-          </section>
+      <div style={{ display:'grid', gap:'48px' }}>
 
-          <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-3">Propriété intellectuelle</h2>
-            <p>L'ensemble des contenus présents sur le site skanema.com (textes, images, logos, code source) sont la propriété exclusive de TERYAT SUARL et sont protégés par les lois applicables en matière de propriété intellectuelle. Toute reproduction, même partielle, est interdite sans autorisation préalable écrite.</p>
-          </section>
+        <section>
+          <h2 style={{ fontSize:'11px', fontWeight:500, textTransform:'uppercase', letterSpacing:'0.1em', color:'#888', margin:'0 0 20px' }}>Éditeur</h2>
+          <div style={{ display:'grid', gap:'1px', background:'#e5e5e5', border:'0.5px solid #e5e5e5', borderRadius:'12px', overflow:'hidden' }}>
+            {[
+              ['Raison sociale',       'TERYAT SUARL'],
+              ['Forme juridique',      'Société Unipersonnelle à Responsabilité Limitée (SUARL)'],
+              ['NINEA',                '012949957'],
+              ['Registre de commerce', 'SN DKR 2026 B 12120'],
+              ['Siège social',         'Nord Foire Diamalaye III, Villa N°238, Dakar, Sénégal'],
+              ['Représentant légal',   'Le Gérant'],
+              ['Email',                'contact@skanema.com'],
+            ].map(([label, value]) => (
+              <Row key={label} label={label} value={value} />
+            ))}
+          </div>
+        </section>
 
-          <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-3">Responsabilité</h2>
-            <p>TERYAT SUARL s'efforce d'assurer l'exactitude et la mise à jour des informations diffusées sur ce site. Toutefois, elle ne peut garantir l'exactitude, la complétude ou l'actualité des informations. L'utilisation des informations et contenus disponibles sur ce site se fait sous l'entière responsabilité de l'utilisateur.</p>
-          </section>
+        <section>
+          <h2 style={{ fontSize:'11px', fontWeight:500, textTransform:'uppercase', letterSpacing:'0.1em', color:'#888', margin:'0 0 20px' }}>Propriété intellectuelle</h2>
+          <p style={{ fontSize:'15px', color:'#333', lineHeight:1.75, margin:0 }}>
+            L'ensemble des contenus présents sur skanema.com — textes, images, logos et code source — sont la propriété exclusive de TERYAT SUARL et protégés par les lois applicables en matière de propriété intellectuelle. Toute reproduction, même partielle, est interdite sans autorisation préalable écrite.
+          </p>
+        </section>
 
-          <section>
-            <h2 className="text-base font-semibold text-gray-900 mb-3">Contact</h2>
-            <p>Pour toute question relative aux présentes mentions légales, vous pouvez nous contacter à l'adresse suivante : <a href="mailto:contact@skanema.com" className="text-gray-900 underline">contact@skanema.com</a></p>
-          </section>
+        <section>
+          <h2 style={{ fontSize:'11px', fontWeight:500, textTransform:'uppercase', letterSpacing:'0.1em', color:'#888', margin:'0 0 20px' }}>Responsabilité</h2>
+          <p style={{ fontSize:'15px', color:'#333', lineHeight:1.75, margin:0 }}>
+            TERYAT SUARL s'efforce d'assurer l'exactitude des informations publiées sur ce site. L'utilisation de ces contenus se fait sous l'entière responsabilité de l'utilisateur. TERYAT SUARL ne saurait être tenue responsable de tout dommage direct ou indirect résultant de l'accès au site.
+          </p>
+        </section>
 
-        </div>
+        <section style={{ borderTop:'0.5px solid #e5e5e5', paddingTop:'32px' }}>
+          <p style={{ fontSize:'13px', color:'#888', margin:0 }}>
+            Pour toute question :{' '}
+            <a href="mailto:contact@skanema.com" style={{ color:'#111', fontWeight:500, textDecoration:'none' }}>
+              contact@skanema.com
+            </a>
+          </p>
+        </section>
+
       </div>
     </div>
   )
