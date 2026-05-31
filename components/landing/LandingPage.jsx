@@ -666,17 +666,30 @@ function CTAFinal() {
 function Footer() {
   return (
     <footer className="bg-gray-900 border-t border-gray-800 py-10 px-5 sm:px-8">
-      <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div>
-          <p className="text-white font-semibold">Skanema</p>
-          <p className="text-gray-500 text-xs mt-0.5">Plateforme de commande WhatsApp pour restaurants africains</p>
+      <div className="max-w-6xl mx-auto">
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-8 mb-8">
+          <div>
+            <p className="text-white font-semibold text-lg">Skanema</p>
+            <p className="text-gray-500 text-xs mt-0.5">Plateforme de commande WhatsApp pour restaurants africains</p>
+            <p className="text-gray-600 text-xs mt-3">Une solution <span className="text-gray-400">TERYAT SUARL</span></p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-1">Légal</p>
+            <a href="/mentions-legales" className="text-gray-500 text-xs hover:text-gray-300 transition-colors">Mentions légales</a>
+            <a href="/politique-de-confidentialite" className="text-gray-500 text-xs hover:text-gray-300 transition-colors">Politique de confidentialité</a>
+            <a href="/cgu" className="text-gray-500 text-xs hover:text-gray-300 transition-colors">Conditions d'utilisation</a>
+            <a href="/cgv" className="text-gray-500 text-xs hover:text-gray-300 transition-colors">Conditions générales de vente</a>
+          </div>
+          <div className="flex flex-col gap-2">
+            <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-1">Contact</p>
+            <a href="mailto:contact@skanema.com" className="text-gray-500 text-xs hover:text-gray-300 transition-colors">contact@skanema.com</a>
+            <a href="https://wa.me/221784632103" target="_blank" rel="noopener noreferrer" className="text-gray-500 text-xs hover:text-gray-300 transition-colors">WhatsApp Support</a>
+          </div>
         </div>
-        <div className="flex items-center gap-6">
-          {['Mentions légales','Confidentialité','Contact'].map(l => (
-            <a key={l} href="#" className="text-gray-500 text-xs hover:text-gray-300 transition-colors">{l}</a>
-          ))}
+        <div className="border-t border-gray-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <p className="text-gray-600 text-xs">© {new Date().getFullYear()} Skanema · TERYAT SUARL · NINEA 012949957</p>
+          <p className="text-gray-700 text-xs">Dakar, Sénégal</p>
         </div>
-        <p className="text-gray-600 text-xs">© {new Date().getFullYear()} Skanema</p>
       </div>
     </footer>
   )
