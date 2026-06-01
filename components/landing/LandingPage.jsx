@@ -106,7 +106,7 @@ function Hero() {
         </h1>
 
         <p className="text-lg text-gray-500 leading-relaxed mb-8 max-w-xl mx-auto">
-          Bot WhatsApp intelligent pour les restaurants africains. Menu interactif,
+          Bot WhatsApp intelligent pour les restaurants et commerces. Menu interactif,
           paiement Wave intégré, livraison géolocalisée. Prêt en 10 minutes.
         </p>
 
@@ -670,8 +670,8 @@ function Footer() {
         <div className="flex flex-col sm:flex-row items-start justify-between gap-8 mb-8">
           <div>
             <p className="text-white font-semibold text-lg">Skanema</p>
-            <p className="text-gray-500 text-xs mt-0.5">Plateforme de commande WhatsApp pour restaurants africains</p>
-            <p className="text-gray-600 text-xs mt-3">Une solution <span className="text-gray-400">TERYAT SUARL</span></p>
+            <p className="text-gray-500 text-xs mt-0.5">Plateforme de commande WhatsApp pour restaurants </p>
+            <p className="text-gray-600 text-xs mt-3">Une solution <span className="text-gray-400">TERYAT</span></p>
           </div>
           <div className="flex flex-col gap-2">
             <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-1">Légal</p>
@@ -687,7 +687,7 @@ function Footer() {
           </div>
         </div>
         <div className="border-t border-gray-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-gray-600 text-xs">© {new Date().getFullYear()} Skanema · TERYAT SUARL · NINEA 012949957</p>
+          <p className="text-gray-600 text-xs">© {new Date().getFullYear()} Skanema · TERYAT · NINEA 012949957</p>
           <p className="text-gray-700 text-xs">Dakar, Sénégal</p>
         </div>
       </div>
