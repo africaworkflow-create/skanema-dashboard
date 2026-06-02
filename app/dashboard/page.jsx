@@ -4,6 +4,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { SetupChecklist } from '@/components/ui/SetupChecklist'
 import { MetricCard } from '@/components/ui/MetricCard'
 import { Badge } from '@/components/ui/Badge'
+import { EmailVerificationBanner } from '@/components/ui/EmailVerificationBanner'
 import { getStats, getOrders } from '@/lib/api'
 import { formatFCFA, formatRelative, STATUS_LABELS } from '@/lib/utils'
 import {
@@ -99,6 +100,7 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="space-y-5">
+        <EmailVerificationBanner />
         <SetupChecklist />
 
           {/* Métriques */}
