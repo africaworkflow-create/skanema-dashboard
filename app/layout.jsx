@@ -68,9 +68,10 @@ export const metadata = {
   },
 
   icons: {
-    icon  : '/favicon.ico',
-    apple : '/apple-touch-icon.png',
-  },
+  icon    : '/icon_SKANEMA.png',
+  shortcut: '/icon_SKANEMA.png',
+  apple   : '/icon_SKANEMA.png',
+},
 }
 
 export default function RootLayout({ children }) {
