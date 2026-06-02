@@ -5,9 +5,7 @@ import { ArrowRight, ArrowLeft, Loader2, Eye, EyeOff, AlertTriangle, CheckCircle
 import Cookies from 'js-cookie'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import Link from 'next/link'
-export const metadata = {
-  robots: 'noindex, nofollow',
-}
+
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.skanema.com'
 
