@@ -30,9 +30,7 @@ function Nav() {
       scrolled ? 'bg-white/95 backdrop-blur border-b border-gray-100' : 'bg-transparent'
     }`}>
       <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
-        <a href="/" className="flex items-center gap-2">
-          <img src="/logo_principal.png" alt="Skanema" className="h-8 w-auto" />
-        </a>
+        <div className="text-lg font-semibold tracking-tight text-gray-900">Skanema</div>
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-8">
@@ -50,7 +48,7 @@ function Nav() {
             Connexion
           </Link>
           <Link href="/onboarding"
-                className="bg-[#DC2626] text-white text-sm font-medium px-4 py-2 rounded-lg
+                className="bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-lg
                            hover:bg-gray-800 transition-colors">
             Démarrer gratuitement
           </Link>
@@ -77,7 +75,7 @@ function Nav() {
               Connexion
             </Link>
             <Link href="/onboarding"
-                  className="block text-center py-2.5 text-sm font-medium bg-[#DC2626] text-white rounded-lg">
+                  className="block text-center py-2.5 text-sm font-medium bg-gray-900 text-white rounded-lg">
               Démarrer gratuitement
             </Link>
           </div>
@@ -92,7 +90,7 @@ function Hero() {
   return (
     <section className="pt-32 pb-20 px-5 sm:px-8 text-center">
       <div className="max-w-3xl mx-auto">
-        <div className="inline-flex items-center gap-2 bg-red-50 text-[#DC2626] text-xs font-medium
+        <div className="inline-flex items-center gap-2 bg-gray-100 text-gray-600 text-xs font-medium
                         px-3 py-1.5 rounded-full mb-6">
           <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
           Essai gratuit 14 jours — sans carte bancaire
@@ -114,7 +112,7 @@ function Hero() {
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link href="/onboarding"
-                className="w-full sm:w-auto bg-[#DC2626] text-white font-medium px-6 py-3 rounded-xl
+                className="w-full sm:w-auto bg-gray-900 text-white font-medium px-6 py-3 rounded-xl
                            hover:bg-gray-800 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
             Démarrer gratuitement <ArrowRight size={16} />
           </Link>
@@ -151,7 +149,7 @@ function Hero() {
             <div className="grid grid-cols-4 min-h-[320px]">
               {/* Sidebar */}
               <div className="col-span-1 border-r border-gray-100 p-4 hidden sm:block">
-                <img src="/logo_principal.png" alt="Skanema" className="h-4 w-auto mb-1" />
+                <div className="text-sm font-semibold text-gray-900 mb-1">Skanema</div>
                 <div className="text-xs text-gray-400 mb-4">Chez Fatou</div>
                 {['Vue d\'ensemble','Commandes','Menu','Statistiques'].map((item, i) => (
                   <div key={i} className={`text-xs px-3 py-2 rounded-lg mb-0.5 ${
@@ -419,7 +417,7 @@ function Features() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {features.map((f, i) => (
             <div key={i} className="bg-white border border-gray-100 rounded-2xl p-6 hover:border-gray-200 transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-[#DC2626] flex items-center justify-center mb-4">
+              <div className="w-10 h-10 rounded-xl bg-gray-900 flex items-center justify-center mb-4">
                 <f.icon size={18} className="text-white" />
               </div>
               <h3 className="text-sm font-semibold text-gray-900 mb-2">{f.title}</h3>
@@ -476,7 +474,7 @@ function Pricing() {
           {plans.map((plan, i) => (
             <div key={i} className={`rounded-2xl p-6 flex flex-col ${
               plan.popular
-                ? 'bg-[#DC2626] text-white ring-2 ring-[#DC2626] scale-[1.02]'
+                ? 'bg-gray-900 text-white ring-2 ring-gray-900 scale-[1.02]'
                 : 'bg-white border border-gray-100'
             }`}>
               {plan.popular && (
@@ -512,7 +510,7 @@ function Pricing() {
                     className={`block text-center py-3 rounded-xl text-sm font-medium transition-all ${
                       plan.popular
                         ? 'bg-white text-gray-900 hover:bg-gray-100'
-                        : 'bg-[#DC2626] text-white hover:bg-[#b91c1c]'
+                        : 'bg-gray-900 text-white hover:bg-gray-800'
                     }`}>
                 {plan.cta}
               </Link>
