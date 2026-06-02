@@ -13,8 +13,7 @@ export default function LoginPage() {
   const { login } = useAuth()
   const router    = useRouter()
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  const handleSubmit = async () => {
     if (!email.trim() || !password) {
       setError('Veuillez remplir tous les champs.')
       return
@@ -49,7 +48,7 @@ export default function LoginPage() {
 
         {/* Card */}
         <div className="bg-white border border-gray-100 rounded-2xl p-6 sm:p-8">
-          <form onSubmit={handleSubmit} noValidate className="space-y-4">
+          <div className="space-y-4">
 
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1.5">
@@ -98,14 +97,15 @@ export default function LoginPage() {
             )}
 
             <button
-              type="submit"
+              type="button"
+              onClick={handleSubmit}
               disabled={loading}
               className="btn-primary w-full flex items-center justify-center gap-2 py-2.5"
             >
               {loading && <Loader2 size={14} className="animate-spin" />}
               {loading ? 'Connexion...' : 'Se connecter'}
             </button>
-          </form>
+          </div>
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-6">
