@@ -14,20 +14,29 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const token = Cookies.get('skanema_token')
     const data  = Cookies.get('skanema_user')
-    if (token && data) {
+
+    if (!token) {
+      setLoading(false)
+      return
+    }
+
+    // Charge les données du cookie immédiatement
+    if (data) {
       try { setUser(JSON.parse(data)) } catch (_) {}
     }
 
-    // Enrichit les données user avec /api/auth/me une seule fois
-    if (token && !fetchedRef.current) {
+    // Enrichit avec /api/auth/me et attend la réponse avant setLoading(false)
+    if (!fetchedRef.current) {
       fetchedRef.current = true
       api.get('/api/auth/me').then(res => {
         const d = res.data.data
         setUser(prev => prev ? { ...prev, ...d } : d)
-      }).catch(() => {})
+      }).catch(() => {}).finally(() => {
+        setLoading(false)
+      })
+    } else {
+      setLoading(false)
     }
-
-    setLoading(false)
   }, [])
 
   const login = async (email, password) => {
