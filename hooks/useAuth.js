@@ -13,30 +13,32 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const token = Cookies.get('skanema_token')
-    const data  = Cookies.get('skanema_user')
 
     if (!token) {
       setLoading(false)
       return
     }
 
-    // Charge les données du cookie immédiatement
+    if (fetchedRef.current) {
+      setLoading(false)
+      return
+    }
+
+    fetchedRef.current = true
+
+    // Charge le cookie immédiatement
+    const data = Cookies.get('skanema_user')
     if (data) {
       try { setUser(JSON.parse(data)) } catch (_) {}
     }
 
-    // Enrichit avec /api/auth/me et attend la réponse avant setLoading(false)
-    if (!fetchedRef.current) {
-      fetchedRef.current = true
-      api.get('/api/auth/me').then(res => {
-        const d = res.data.data
-        setUser(prev => prev ? { ...prev, ...d } : d)
-      }).catch(() => {}).finally(() => {
-        setLoading(false)
-      })
-    } else {
+    // Enrichit avec /api/auth/me
+    api.get('/api/auth/me').then(res => {
+      const d = res.data.data
+      setUser(prev => prev ? { ...prev, ...d } : d)
+    }).catch(() => {}).finally(() => {
       setLoading(false)
-    }
+    })
   }, [])
 
   const login = async (email, password) => {
@@ -44,6 +46,7 @@ export function AuthProvider({ children }) {
     const { token, data } = res.data
     Cookies.set('skanema_token', token, { expires: 7, secure: true, sameSite: 'strict' })
     Cookies.set('skanema_user',  JSON.stringify(data), { expires: 7 })
+    fetchedRef.current = true // évite un double fetch au redirect
     setUser(data)
     return data
   }
@@ -56,6 +59,7 @@ export function AuthProvider({ children }) {
     })
     document.cookie = 'skanema_token=;expires=Thu, 01 Jan 1970 00:00:00 GMT;domain=.skanema.com;path=/'
     document.cookie = 'skanema_user=;expires=Thu, 01 Jan 1970 00:00:00 GMT;domain=.skanema.com;path=/'
+    fetchedRef.current = false
     setUser(null)
     window.location.href = '/login'
   }

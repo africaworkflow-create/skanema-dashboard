@@ -15,6 +15,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    e.stopPropagation()
     if (!email.trim() || !password) {
       setError('Veuillez remplir tous les champs.')
       return
@@ -25,9 +26,8 @@ export default function LoginPage() {
       await login(email.trim(), password)
       router.push('/dashboard')
     } catch (err) {
-      setError(err.response?.data?.message || 'Identifiants invalides.')
-      // Ne pas effacer l'email — le mot de passe seulement
       setPassword('')
+      setError(err.response?.data?.message || 'Identifiants invalides.')
     } finally {
       setLoading(false)
     }
@@ -37,7 +37,6 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-sm">
 
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="text-2xl font-semibold tracking-tight text-gray-900 mb-1">
             Skanema
@@ -47,14 +46,11 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Card */}
         <div className="bg-white border border-gray-100 rounded-2xl p-6 sm:p-8">
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                Email
-              </label>
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">Email</label>
               <input
                 type="email"
                 value={email}
@@ -63,14 +59,11 @@ export default function LoginPage() {
                 className="input"
                 style={{ fontSize: '16px' }}
                 autoComplete="email"
-                inputMode="email"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                Mot de passe
-              </label>
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">Mot de passe</label>
               <div className="relative">
                 <input
                   type={showPass ? 'text' : 'password'}
