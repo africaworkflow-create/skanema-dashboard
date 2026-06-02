@@ -5,23 +5,29 @@ import { useAuth } from '@/hooks/useAuth'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 
 export default function LoginPage() {
-  const [email,     setEmail]     = useState('')
-  const [password,  setPassword]  = useState('')
-  const [showPass,  setShowPass]  = useState(false)
-  const [error,     setError]     = useState('')
-  const [loading,   setLoading]   = useState(false)
-  const { login }  = useAuth()
-  const router     = useRouter()
+  const [email,    setEmail]    = useState('')
+  const [password, setPassword] = useState('')
+  const [showPass, setShowPass] = useState(false)
+  const [error,    setError]    = useState('')
+  const [loading,  setLoading]  = useState(false)
+  const { login } = useAuth()
+  const router    = useRouter()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (!email.trim() || !password) {
+      setError('Veuillez remplir tous les champs.')
+      return
+    }
     setError('')
     setLoading(true)
     try {
-      await login(email, password)
+      await login(email.trim(), password)
       router.push('/dashboard')
     } catch (err) {
       setError(err.response?.data?.message || 'Identifiants invalides.')
+      // Ne pas effacer l'email — le mot de passe seulement
+      setPassword('')
     } finally {
       setLoading(false)
     }
@@ -43,7 +49,7 @@ export default function LoginPage() {
 
         {/* Card */}
         <div className="bg-white border border-gray-100 rounded-2xl p-6 sm:p-8">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
 
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1.5">
@@ -54,9 +60,10 @@ export default function LoginPage() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="admin@votresto.sn"
-                required
                 className="input"
+                style={{ fontSize: '16px' }}
                 autoComplete="email"
+                inputMode="email"
               />
             </div>
 
@@ -70,8 +77,8 @@ export default function LoginPage() {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  required
                   className="input pr-10"
+                  style={{ fontSize: '16px' }}
                   autoComplete="current-password"
                 />
                 <button
