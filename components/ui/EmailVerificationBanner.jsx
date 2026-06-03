@@ -13,7 +13,7 @@ export function EmailVerificationBanner() {
   const [sent,      setSent]      = useState(false)
 
   // N'affiche pas si email déjà vérifié ou bannière ignorée
-  if (user?.emailVerified || dismissed) return null
+  if (user?.emailVerified !== false || dismissed) return null
 
   const handleResend = async () => {
     setSending(true)
