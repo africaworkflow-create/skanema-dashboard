@@ -44,7 +44,7 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     const res = await apiLogin(email, password)
     const { token, data } = res.data
-    Cookies.set('skanema_token', token, { expires: 7, secure: true, sameSite: 'strict' })
+    Cookies.set('skanema_token', token, { expires: 7, secure: true, sameSite: 'lax' })
     Cookies.set('skanema_user',  JSON.stringify(data), { expires: 7 })
     fetchedRef.current = true // évite un double fetch au redirect
     setUser(data)
