@@ -24,7 +24,7 @@ const PLANS = [
   },
 ]
 
-const WA_NUMBER = '221778075388'
+const WA_NUMBER = '221784632103' // Numéro WhatsApp pour contact (ex: support)
 
 function buildWAMessage(plan, restaurantName) {
   return encodeURIComponent(
