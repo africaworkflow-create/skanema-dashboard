@@ -19,7 +19,11 @@ function ResetPasswordContent() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!password || password.length < 8) { setError('Minimum 8 caractères.'); return }
+    const passRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!password || !passRegex.test(password)) { 
+    setError('8 caractères minimum, une majuscule, une minuscule et un chiffre.'); 
+  return 
+}
     if (password !== confirm) { setError('Les mots de passe ne correspondent pas.'); return }
     if (!token) { setError('Lien invalide.'); return }
 
