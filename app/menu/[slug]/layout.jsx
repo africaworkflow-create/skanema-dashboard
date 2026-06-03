@@ -1,5 +1,5 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.skanema.com'
-const BASE_URL = 'https://www.skanema.com'
+const MENU_URL = 'https://www.skanema.com'
 
 export async function generateMetadata({ params }) {
   const { slug } = params
@@ -18,7 +18,7 @@ export async function generateMetadata({ params }) {
       openGraph  : {
         title      : `${resto.name} — Commander sur WhatsApp`,
         description: `Découvrez le menu de ${resto.name} et commandez en quelques secondes via WhatsApp.`,
-        url        : `${BASE_URL}/menu/${slug}`,
+        url        : `${MENU_URL}/menu/${slug}`,
         images     : resto.logoUrl ? [{ url: resto.logoUrl, width: 400, height: 400, alt: resto.name }] : [],
       },
       twitter: {
@@ -27,7 +27,7 @@ export async function generateMetadata({ params }) {
         description: `Commandez chez ${resto.name} via WhatsApp.`,
       },
       alternates: {
-        canonical: `${BASE_URL}/menu/${slug}`,
+        canonical: `${MENU_URL}/menu/${slug}`,
       },
     }
   } catch (_) {
