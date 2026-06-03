@@ -8,8 +8,17 @@ export default function DashboardLayout({ children }) {
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.replace('/login')
+    if (loading) return
+    if (!user) { router.replace('/login'); return }
+
+    // Vérifie si trial expiré ou suspendu
+    const sub = user?.subscription
+    if (!sub) return
+    const isTrialExpired = sub.status === 'trial' && new Date() > new Date(sub.trialEnds)
+    const isSuspended    = sub.status === 'suspended' || sub.status === 'cancelled'
+
+    if (isTrialExpired || isSuspended) {
+      router.replace('/abonnement-expire')
     }
   }, [user, loading, router])
 
