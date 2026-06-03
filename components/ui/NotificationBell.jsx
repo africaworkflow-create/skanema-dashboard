@@ -141,10 +141,12 @@ export function NotificationBell() {
             ) : recentOrders.map(order => {
               const isNew = new Date(order.createdAt) > new Date(lastSeenRef.current)
               return (
-                <div
+                <a
                   key={order._id}
+                  href="/dashboard/commandes"
+                  onClick={() => setOpen(false)}
                   className={`flex items-start gap-3 px-4 py-3 border-b border-gray-50
-                             last:border-0 hover:bg-gray-50 transition-colors ${
+                             last:border-0 hover:bg-gray-50 transition-colors cursor-pointer ${
                     isNew ? 'bg-blue-50/50' : ''
                   }`}
                 >
@@ -172,7 +174,7 @@ export function NotificationBell() {
                   {isNew && (
                     <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-2" />
                   )}
-                </div>
+                </a>
               )
             })}
           </div>
