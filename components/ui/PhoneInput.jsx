@@ -83,12 +83,18 @@ export function PhoneInput({ value, onChange, style }) {
   }
 
   const handleNumberChange = (e) => {
-    const raw   = e.target.value.replace(/\D/g, '')
-    const local = normalizeLocal(raw, selected.dial)
-    setLocalNum(local)
-    const full  = local ? '+' + selected.dial + local : ''
-    onChange(full, selected.dial, local)
-  }
+  const raw   = e.target.value.replace(/\D/g, '')
+  const local = normalizeLocal(raw, selected.dial)
+  
+  // Retire automatiquement tout préfixe pays détecté
+  // (ex: si SN sélectionné et numéro commence par 225, on retire 225)
+  const otherDial = COUNTRIES.find(c => c.code !== selected.code && local.startsWith(c.dial))
+  const cleaned   = otherDial ? local.slice(otherDial.dial.length) : local
+
+  setLocalNum(cleaned)
+  const full = cleaned ? '+' + selected.dial + cleaned : ''
+  onChange(full, selected.dial, cleaned)
+}
 
   const filtered = COUNTRIES.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
