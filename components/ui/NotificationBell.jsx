@@ -5,6 +5,14 @@ import { getOrders } from '@/lib/api'
 import { formatFCFA } from '@/lib/utils'
 
 const POLL_INTERVAL = 30000 // 30 secondes
+
+function playNotificationSound() {
+  try {
+    const audio = new Audio('/notification.mp3')
+    audio.volume = 0.7
+    audio.play().catch(() => {}) // ignore si bloqué par le navigateur
+  } catch (_) {}
+}
 const STORAGE_KEY   = 'skanema_last_seen_order'
 
 function timeAgo(date) {
@@ -57,6 +65,10 @@ export function NotificationBell() {
         new Date(o.createdAt) > new Date(lastSeenRef.current) &&
         o.status !== 'CANCELLED'
       )
+      // Joue le son si nouvelles commandes
+      if (unseen.length > newOrders.length) {
+        playNotificationSound()
+      }
       setNewOrders(unseen)
       setRecentOrders(orders)
     } catch (_) {}
@@ -141,12 +153,10 @@ export function NotificationBell() {
             ) : recentOrders.map(order => {
               const isNew = new Date(order.createdAt) > new Date(lastSeenRef.current)
               return (
-                <a
+                <div
                   key={order._id}
-                  href="/dashboard/commandes"
-                  onClick={() => setOpen(false)}
                   className={`flex items-start gap-3 px-4 py-3 border-b border-gray-50
-                             last:border-0 hover:bg-gray-50 transition-colors cursor-pointer ${
+                             last:border-0 hover:bg-gray-50 transition-colors ${
                     isNew ? 'bg-blue-50/50' : ''
                   }`}
                 >
@@ -174,7 +184,7 @@ export function NotificationBell() {
                   {isNew && (
                     <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-2" />
                   )}
-                </a>
+                </div>
               )
             })}
           </div>
