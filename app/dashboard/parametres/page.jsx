@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
-import { Loader2, CheckCircle2, Store, Lock, Bell } from 'lucide-react'
+import { Loader2, CheckCircle2, Store, Lock, Bell, Copy, ExternalLink } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import api from '@/lib/api'
 import { ImageUpload } from '@/components/ui/ImageUpload'
@@ -128,6 +128,37 @@ export default function ParametresPage() {
               <label className="block text-xs font-medium text-gray-700 mb-1.5">Nom du restaurant</label>
               <input value={resto.name} onChange={e => setResto(r => ({ ...r, name: e.target.value }))} className="input" />
             </div>
+
+            {user?.slug && (
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">URL de votre menu public</label>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-3 min-w-0">
+                    <span className="text-xs text-gray-500 truncate">
+                      https://www.skanema.com/menu/{user.slug}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(`https://www.skanema.com/menu/${user.slug}`)}
+                    className="btn-ghost flex items-center gap-1.5 text-xs flex-shrink-0"
+                    title="Copier le lien"
+                  >
+                    <Copy size={13} />
+                    Copier
+                  </button>
+                  <a
+                    href={`https://www.skanema.com/menu/${user.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-ghost flex items-center gap-1.5 text-xs flex-shrink-0"
+                    title="Voir le menu"
+                  >
+                    <ExternalLink size={13} />
+                  </a>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">Partagez ce lien avec vos clients.</p>
+              </div>
+            )}
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1.5">Numéro de téléphone</label>
               <div className="flex items-center gap-2">
