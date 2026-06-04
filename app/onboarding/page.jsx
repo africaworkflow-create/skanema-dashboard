@@ -1,77 +1,42 @@
 'use client'
 import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowRight, ArrowLeft, Loader2, Eye, EyeOff, AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { ArrowRight, ArrowLeft, Loader2, Eye, EyeOff, AlertTriangle, CheckCircle2, Smartphone } from 'lucide-react'
 import Cookies from 'js-cookie'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import Link from 'next/link'
 
-
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.skanema.com'
 
 const PLANS = [
-  {
-    id      : 'basic',
-    name    : 'Basic',
-    price   : 15000,
-    features: ['10 plats au menu', 'Bot WhatsApp', 'Paiement Wave', '1 zone de livraison'],
-  },
-  {
-    id      : 'pro',
-    name    : 'Pro',
-    price   : 35000,
-    popular : true,
-    features: ['25 plats au menu', 'Bot WhatsApp', 'Statistiques avancées', '3 zones de livraison'],
-  },
-  {
-    id      : 'premium',
-    name    : 'Premium',
-    price   : 75000,
-    features: ['Plats illimités', 'Bot WhatsApp', 'Support prioritaire', 'Zones illimitées'],
-  },
+  { id: 'basic',   name: 'Basic',   price: 15000, features: ['10 plats au menu', 'Bot WhatsApp', 'Paiement Wave', '1 zone de livraison'] },
+  { id: 'pro',     name: 'Pro',     price: 35000, popular: true, features: ['25 plats au menu', 'Bot WhatsApp', 'Statistiques avancées', '3 zones de livraison'] },
+  { id: 'premium', name: 'Premium', price: 75000, features: ['Plats illimités', 'Bot WhatsApp', 'Support prioritaire', 'Zones illimitées'] },
 ]
 
 function fmt(n) { return new Intl.NumberFormat('fr-FR').format(n) + ' FCFA' }
 
-// ── Indicateur force mot de passe — 3 segments ───────────────────
 function PasswordStrength({ password }) {
   if (!password) return null
-
   const s1 = password.length >= 8
   const s2 = s1 && /[A-Z]/.test(password) && /[a-z]/.test(password)
   const s3 = s2 && /[0-9]/.test(password)
-
   const score = s3 ? 3 : s2 ? 2 : s1 ? 1 : 0
-
   const missing = []
   if (!s1) missing.push('8 caractères minimum')
-  if (s1 && !s2) {
-    if (!/[A-Z]/.test(password)) missing.push('une majuscule')
-    if (!/[a-z]/.test(password)) missing.push('une minuscule')
-  }
+  if (s1 && !s2) { if (!/[A-Z]/.test(password)) missing.push('une majuscule'); if (!/[a-z]/.test(password)) missing.push('une minuscule') }
   if (s2 && !s3) missing.push('un chiffre')
-
-  const color = score === 0 ? '#ef4444' : score === 1 ? '#ef4444' : score === 2 ? '#f97316' : '#16a34a'
-  const label = score === 0 ? '8 caractères minimum' :
-                score === 3 ? 'Fort — mot de passe sécurisé' :
-                'Ajoutez ' + missing.join(' et ')
-
+  const color = score <= 1 ? '#ef4444' : score === 2 ? '#f97316' : '#16a34a'
+  const label = score === 0 ? '8 caractères minimum' : score === 3 ? 'Fort — mot de passe sécurisé' : 'Ajoutez ' + missing.join(' et ')
   return (
     <div className="mt-2.5 space-y-1.5">
       <div className="flex gap-1.5">
-        {[1, 2, 3].map(i => (
-          <div
-            key={i}
-            className="h-1.5 flex-1 rounded-full transition-all duration-300"
-            style={{ background: (i === 1 && password.length > 0) || i <= score ? color : '#e5e7eb' }}
-          />
+        {[1,2,3].map(i => (
+          <div key={i} className="h-1.5 flex-1 rounded-full transition-all duration-300"
+               style={{ background: (i === 1 && password.length > 0) || i <= score ? color : '#e5e7eb' }} />
         ))}
       </div>
-      {label && (
-        <p className="text-xs font-medium transition-all duration-300" style={{ color }}>
-          {label}
-        </p>
-      )}
+      {label && <p className="text-xs font-medium transition-all duration-300" style={{ color }}>{label}</p>}
     </div>
   )
 }
@@ -86,22 +51,70 @@ function OnboardingContent() {
   const [error,        setError]        = useState('')
   const [showPass,     setShowPass]     = useState(false)
   const [selectedPlan, setSelectedPlan] = useState(initPlan)
-  const [form, setForm] = useState({ name: '', email: '', phone: '', dialCode: '221', password: '' })
+  const [form,         setForm]         = useState({ name: '', email: '', phone: '', dialCode: '221', password: '' })
+  const [phoneVerified, setPhoneVerified] = useState(false)
+  const [otpSent,      setOtpSent]      = useState(false)
+  const [otpCode,      setOtpCode]      = useState('')
+  const [otpLoading,   setOtpLoading]   = useState(false)
+  const [countdown,    setCountdown]    = useState(0)
 
-  const plan = PLANS.find(p => p.id === selectedPlan) || PLANS[1]
+  const plan  = PLANS.find(p => p.id === selectedPlan) || PLANS[1]
+  const passOk = form.password.length >= 8 && /[A-Z]/.test(form.password) && /[a-z]/.test(form.password) && /[0-9]/.test(form.password)
 
-  const passOk = form.password.length >= 8 &&
-                 /[A-Z]/.test(form.password) && /[a-z]/.test(form.password) &&
-                 /[0-9]/.test(form.password)
+  // ── Envoie OTP ──────────────────────────────────────────────────
+  const handleSendOTP = async () => {
+    if (!form.phone.trim()) { setError('Entrez votre numéro de téléphone.'); return }
+    setOtpLoading(true)
+    setError('')
+    try {
+      const res  = await fetch(`${API_URL}/api/otp/send`, {
+        method : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body   : JSON.stringify({ phone: form.phone.trim() }),
+      })
+      const data = await res.json()
+      if (!data.success) { setError(data.message || 'Erreur envoi SMS.'); return }
+      setOtpSent(true)
+      // Countdown 60s avant de pouvoir renvoyer
+      setCountdown(60)
+      const t = setInterval(() => {
+        setCountdown(c => { if (c <= 1) { clearInterval(t); return 0 } return c - 1 })
+      }, 1000)
+    } catch (_) {
+      setError('Erreur réseau. Vérifiez votre connexion.')
+    } finally {
+      setOtpLoading(false)
+    }
+  }
 
+  // ── Vérifie OTP ─────────────────────────────────────────────────
+  const handleVerifyOTP = async () => {
+    if (otpCode.length !== 6) { setError('Entrez le code à 6 chiffres.'); return }
+    setOtpLoading(true)
+    setError('')
+    try {
+      const res  = await fetch(`${API_URL}/api/otp/verify`, {
+        method : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body   : JSON.stringify({ phone: form.phone.trim(), code: otpCode }),
+      })
+      const data = await res.json()
+      if (!data.success) { setError(data.message || 'Code incorrect.'); return }
+      setPhoneVerified(true)
+      setStep(3)
+      setError('')
+    } catch (_) {
+      setError('Erreur réseau.')
+    } finally {
+      setOtpLoading(false)
+    }
+  }
+
+  // ── Inscription finale ──────────────────────────────────────────
   const handleSubmit = async () => {
     if (!form.name.trim())  { setError('Le nom du restaurant est requis.');   return }
     if (!form.email.trim()) { setError('L\'email est requis.');               return }
-    if (!form.phone.trim()) { setError('Le numéro de téléphone est requis.'); return }
-    if (!passOk) {
-      setError('Mot de passe : 8 caractères minimum, une majuscule, une minuscule et un chiffre.')
-      return
-    }
+    if (!passOk)            { setError('Mot de passe : 8 caractères minimum, une majuscule, une minuscule et un chiffre.'); return }
 
     setLoading(true)
     setError('')
@@ -122,7 +135,6 @@ function OnboardingContent() {
       })
       const data = await res.json()
       if (!data.success) { setError(data.message || 'Erreur. Veuillez réessayer.'); return }
-
       const isProd = window.location.hostname.includes('skanema.com')
       const domain = isProd ? '.skanema.com' : undefined
       const opts   = { expires: 7, secure: isProd, sameSite: isProd ? 'None' : 'Lax', domain }
@@ -132,7 +144,6 @@ function OnboardingContent() {
       })
       Cookies.set('skanema_token', data.token,                opts)
       Cookies.set('skanema_user',  JSON.stringify(data.data), opts)
-      // Force un rechargement complet pour que le middleware lise le cookie
       window.location.href = '/dashboard'
     } catch (_) {
       setError('Erreur réseau. Vérifiez votre connexion.')
@@ -141,14 +152,19 @@ function OnboardingContent() {
     }
   }
 
+  const STEPS = [
+    { n: 1, label: 'Votre plan'    },
+    { n: 2, label: 'Vérification'  },
+    { n: 3, label: 'Votre compte'  },
+  ]
+
   return (
     <div className="min-h-screen bg-white flex flex-col lg:flex-row">
 
-      {/* ── Panneau gauche — desktop uniquement ── */}
+      {/* ── Panneau gauche ── */}
       <div className="hidden lg:flex lg:w-[42%] bg-gray-900 flex-col justify-between p-12 relative overflow-hidden sticky top-0 h-screen">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24" />
-
         <div className="flex items-center gap-2.5 relative">
           <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -157,7 +173,6 @@ function OnboardingContent() {
           </div>
           <span className="text-white text-lg font-semibold">Skanema</span>
         </div>
-
         <div className="relative">
           <div className="text-white/20 text-6xl font-serif leading-none mb-4">"</div>
           <p className="text-white text-lg font-medium leading-relaxed mb-6">
@@ -172,13 +187,8 @@ function OnboardingContent() {
             </div>
           </div>
         </div>
-
         <div className="grid grid-cols-3 gap-4 relative">
-          {[
-            { value: '50+',    label: 'Restaurants'   },
-            { value: '2 400+', label: 'Commandes'     },
-            { value: '99.9%',  label: 'Disponibilité' },
-          ].map((s, i) => (
+          {[{ value: '50+', label: 'Restaurants' }, { value: '2 400+', label: 'Commandes' }, { value: '99.9%', label: 'Disponibilité' }].map((s, i) => (
             <div key={i} className="bg-white/5 rounded-xl p-3 text-center">
               <p className="text-white font-bold text-lg">{s.value}</p>
               <p className="text-white/50 text-xs mt-0.5">{s.label}</p>
@@ -187,28 +197,22 @@ function OnboardingContent() {
         </div>
       </div>
 
-      {/* ── Panneau droit formulaire ── */}
+      {/* ── Panneau droit ── */}
       <div className="flex-1 flex flex-col items-center justify-center px-5 py-10 lg:px-16">
         <div className="w-full max-w-md">
 
           {/* Indicateur étapes */}
           <div className="flex items-center gap-2 mb-8">
-            {[
-              { n: 1, label: 'Votre plan'   },
-              { n: 2, label: 'Votre compte' },
-            ].map((s, i) => (
+            {STEPS.map((s, i) => (
               <div key={s.n} className="flex items-center gap-2">
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
                   s.n < step   ? 'bg-green-500 text-white' :
-                  s.n === step ? 'bg-gray-900 text-white'  :
-                                 'bg-gray-100 text-gray-400'
+                  s.n === step ? 'bg-gray-900 text-white'  : 'bg-gray-100 text-gray-400'
                 }`}>
                   {s.n < step ? <CheckCircle2 size={13} /> : s.n}
                 </div>
-                <span className={`text-xs ${s.n === step ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>
-                  {s.label}
-                </span>
-                {i < 1 && <div className="w-6 h-px bg-gray-200 mx-1" />}
+                <span className={`text-xs ${s.n === step ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>{s.label}</span>
+                {i < 2 && <div className="w-6 h-px bg-gray-200 mx-1" />}
               </div>
             ))}
           </div>
@@ -217,40 +221,22 @@ function OnboardingContent() {
           {step === 1 && (
             <div style={{ animation: 'fadeUp 0.3s ease both' }}>
               <style>{`@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
-
               <h1 className="text-2xl font-bold text-gray-900 mb-1">Choisissez votre plan</h1>
-              <p className="text-sm text-gray-400 mb-6">
-                Notre équipe vous contactera pour l'activation et le paiement Wave.
-              </p>
-
+              <p className="text-sm text-gray-400 mb-6">Notre équipe vous contactera pour l'activation et le paiement Wave.</p>
               <div className="space-y-3 mb-6">
                 {PLANS.map(p => {
                   const active = selectedPlan === p.id
                   return (
-                    <button
-                      key={p.id}
-                      onClick={() => setSelectedPlan(p.id)}
-                      className={`w-full text-left rounded-2xl border-2 p-4 transition-all duration-200 ${
-                        active ? 'border-gray-900 bg-white' : 'border-gray-100 bg-white hover:border-gray-200'
-                      }`}
-                    >
+                    <button key={p.id} onClick={() => setSelectedPlan(p.id)}
+                      className={`w-full text-left rounded-2xl border-2 p-4 transition-all duration-200 ${active ? 'border-gray-900 bg-white' : 'border-gray-100 bg-white hover:border-gray-200'}`}>
                       <div className="flex items-center justify-between mb-2.5">
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-bold text-gray-900">{p.name}</p>
-                          {p.popular && (
-                            <span className="text-xs bg-gray-900 text-white px-2 py-0.5 rounded-full font-medium">
-                              Populaire
-                            </span>
-                          )}
+                          {p.popular && <span className="text-xs bg-gray-900 text-white px-2 py-0.5 rounded-full font-medium">Populaire</span>}
                         </div>
                         <div className="flex items-center gap-2.5">
-                          <span className="font-bold text-gray-900">
-                            {fmt(p.price)}
-                            <span className="text-xs font-normal text-gray-400 ml-1">/mois</span>
-                          </span>
-                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                            active ? 'border-gray-900 bg-gray-900' : 'border-gray-300'
-                          }`}>
+                          <span className="font-bold text-gray-900">{fmt(p.price)}<span className="text-xs font-normal text-gray-400 ml-1">/mois</span></span>
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${active ? 'border-gray-900 bg-gray-900' : 'border-gray-300'}`}>
                             {active && <div className="w-2 h-2 rounded-full bg-white" />}
                           </div>
                         </div>
@@ -266,98 +252,164 @@ function OnboardingContent() {
                   )
                 })}
               </div>
-
-              <button
-                onClick={() => setStep(2)}
-                className="w-full bg-gray-900 text-white font-semibold py-4 rounded-2xl
-                           flex items-center justify-center gap-2 hover:bg-gray-800
-                           active:scale-[0.98] transition-all"
-              >
+              <button onClick={() => setStep(2)}
+                className="w-full bg-gray-900 text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-gray-800 active:scale-[0.98] transition-all">
                 Continuer <ArrowRight size={18} />
               </button>
             </div>
           )}
 
-          {/* ── ÉTAPE 2 — Compte ── */}
+          {/* ── ÉTAPE 2 — Vérification téléphone ── */}
           {step === 2 && (
             <div style={{ animation: 'fadeUp 0.3s ease both' }}>
               <style>{`@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-10 h-10 rounded-xl bg-gray-900 flex items-center justify-center">
+                  <Smartphone size={18} className="text-white" />
+                </div>
+                <h1 className="text-2xl font-bold text-gray-900">Vérifiez votre numéro</h1>
+              </div>
+              <p className="text-sm text-gray-400 mb-6">
+                Ce numéro recevra les notifications de commandes.
+              </p>
 
+              {!otpSent ? (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1.5">Numéro de téléphone *</label>
+                    <PhoneInput
+                      value={form.phone}
+                      onChange={(full, dial, local) => setForm(f => ({ ...f, phone: full, dialCode: dial }))}
+                      style={{ minHeight: '52px' }}
+                    />
+                    <p className="text-xs text-gray-400 mt-1">Un code SMS vous sera envoyé pour vérifier ce numéro.</p>
+                  </div>
+
+                  {error && (
+                    <div className="flex items-start gap-2 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+                      <AlertTriangle size={14} className="text-red-500 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-red-600">{error}</p>
+                    </div>
+                  )}
+
+                  <div className="flex gap-3">
+                    <button onClick={() => { setStep(1); setError('') }}
+                      className="px-4 py-4 rounded-2xl border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">
+                      <ArrowLeft size={18} />
+                    </button>
+                    <button onClick={handleSendOTP} disabled={otpLoading || !form.phone}
+                      className="flex-1 bg-gray-900 text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-gray-800 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                      {otpLoading ? <><Loader2 size={18} className="animate-spin" /> Envoi…</> : <>Envoyer le code SMS <ArrowRight size={18} /></>}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <p className="text-xs text-gray-500">Code envoyé au</p>
+                    <p className="text-sm font-semibold text-gray-900 mt-0.5">{form.phone}</p>
+                    <button onClick={() => { setOtpSent(false); setOtpCode(''); setError('') }}
+                      className="text-xs text-gray-400 hover:text-gray-600 underline mt-1">
+                      Changer de numéro
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1.5">Code de vérification à 6 chiffres</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={otpCode}
+                      onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                      placeholder="123456"
+                      style={{ fontSize: '24px', letterSpacing: '0.3em', textAlign: 'center' }}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-4 outline-none focus:border-gray-400 transition-colors placeholder-gray-300 font-mono"
+                      autoFocus
+                    />
+                  </div>
+
+                  <div className="text-center">
+                    {countdown > 0 ? (
+                      <p className="text-xs text-gray-400">Renvoyer dans {countdown}s</p>
+                    ) : (
+                      <button onClick={handleSendOTP} disabled={otpLoading}
+                        className="text-xs text-gray-600 hover:text-gray-900 underline">
+                        Renvoyer le code
+                      </button>
+                    )}
+                  </div>
+
+                  {error && (
+                    <div className="flex items-start gap-2 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+                      <AlertTriangle size={14} className="text-red-500 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-red-600">{error}</p>
+                    </div>
+                  )}
+
+                  <button onClick={handleVerifyOTP} disabled={otpLoading || otpCode.length !== 6}
+                    className="w-full bg-gray-900 text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-gray-800 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                    {otpLoading ? <><Loader2 size={18} className="animate-spin" /> Vérification…</> : <>Vérifier le code <ArrowRight size={18} /></>}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── ÉTAPE 3 — Compte ── */}
+          {step === 3 && (
+            <div style={{ animation: 'fadeUp 0.3s ease both' }}>
+              <style>{`@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
               <h1 className="text-2xl font-bold text-gray-900 mb-1">Créez votre compte</h1>
               <p className="text-sm text-gray-400 mb-6">
                 Plan <span className="font-semibold text-gray-700">{plan.name}</span> · {fmt(plan.price)}/mois
-                <button onClick={() => { setStep(1); setError('') }}
-                        className="text-gray-400 hover:text-gray-600 underline ml-2 text-xs">
-                  Changer
-                </button>
+                <button onClick={() => { setStep(1); setError('') }} className="text-gray-400 hover:text-gray-600 underline ml-2 text-xs">Changer</button>
               </p>
 
               <div className="space-y-4">
+                {/* Numéro vérifié — readonly */}
+                <div className="flex items-center gap-2 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
+                  <CheckCircle2 size={16} className="text-green-500 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-green-800">Numéro vérifié</p>
+                    <p className="text-xs text-green-600">{form.phone}</p>
+                  </div>
+                </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                    Nom du restaurant *
-                  </label>
-                  <input
-                    autoFocus
-                    value={form.name}
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Nom du restaurant *</label>
+                  <input autoFocus value={form.name}
                     onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                     onKeyDown={e => e.key === 'Enter' && handleSubmit()}
                     placeholder="Ex: Chez Fatou, Le Pélican…"
                     style={{ fontSize: '16px' }}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3.5 outline-none
-                               focus:border-gray-400 transition-colors placeholder-gray-300"
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3.5 outline-none focus:border-gray-400 transition-colors placeholder-gray-300"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                    Numéro de téléphone *
-                  </label>
-                  <PhoneInput
-                    value={form.phone}
-                    onChange={(full, dial, local) => setForm(f => ({ ...f, phone: full, dialCode: dial }))}
-                    style={{ minHeight: '52px' }}
-                  />
-                  <p className="text-xs text-gray-400 mt-1">
-                    Pour recevoir vos notifications de commandes sur WhatsApp.
-                  </p>
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1.5">Email *</label>
-                  <input
-                    type="email"
-                    value={form.email}
+                  <input type="email" value={form.email}
                     onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                     onKeyDown={e => e.key === 'Enter' && handleSubmit()}
                     placeholder="vous@email.com"
                     style={{ fontSize: '16px' }}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3.5 outline-none
-                               focus:border-gray-400 transition-colors placeholder-gray-300"
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3.5 outline-none focus:border-gray-400 transition-colors placeholder-gray-300"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                    Mot de passe *
-                  </label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Mot de passe *</label>
                   <div className="relative">
-                    <input
-                      type={showPass ? 'text' : 'password'}
-                      value={form.password}
+                    <input type={showPass ? 'text' : 'password'} value={form.password}
                       onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
                       onKeyDown={e => e.key === 'Enter' && handleSubmit()}
                       placeholder="Min. 8 caractères"
                       style={{ fontSize: '16px' }}
-                      className="w-full border border-gray-200 rounded-xl px-4 py-3.5 pr-11 outline-none
-                                 focus:border-gray-400 transition-colors placeholder-gray-300"
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3.5 pr-11 outline-none focus:border-gray-400 transition-colors placeholder-gray-300"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPass(!showPass)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
-                    >
+                    <button type="button" onClick={() => setShowPass(!showPass)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1">
                       {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
@@ -373,40 +425,26 @@ function OnboardingContent() {
               </div>
 
               <div className="flex gap-3 mt-6">
-                <button
-                  onClick={() => { setStep(1); setError('') }}
-                  className="px-4 py-4 rounded-2xl border border-gray-200 text-gray-500
-                             hover:bg-gray-50 transition-colors"
-                >
+                <button onClick={() => { setStep(2); setOtpSent(false); setOtpCode(''); setError('') }}
+                  className="px-4 py-4 rounded-2xl border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">
                   <ArrowLeft size={18} />
                 </button>
-                <button
-                  onClick={handleSubmit}
-                  disabled={loading || !form.name || !form.email || !form.phone || !form.password}
-                  className="flex-1 bg-gray-900 text-white font-semibold py-4 rounded-2xl
-                             flex items-center justify-center gap-2 hover:bg-gray-800
-                             active:scale-[0.98] transition-all
-                             disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {loading
-                    ? <><Loader2 size={18} className="animate-spin" /> Création en cours…</>
-                    : <><span>Accéder au dashboard</span><ArrowRight size={18} /></>
-                  }
+                <button onClick={handleSubmit} disabled={loading || !form.name || !form.email || !form.password}
+                  className="flex-1 bg-gray-900 text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-gray-800 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                  {loading ? <><Loader2 size={18} className="animate-spin" /> Création en cours…</> : <><span>Accéder au dashboard</span><ArrowRight size={18} /></>}
                 </button>
               </div>
 
               <p className="text-xs text-gray-400 text-center mt-4">
                 En créant un compte vous acceptez nos{' '}
-                <a href="#" className="underline hover:text-gray-600">conditions d'utilisation</a>
+                <a href="/cgu" className="underline hover:text-gray-600">conditions d'utilisation</a>
               </p>
             </div>
           )}
 
           <p className="text-center text-xs text-gray-400 mt-8">
             Déjà un compte ?{' '}
-            <Link href="/login" className="text-gray-900 font-medium hover:underline">
-              Se connecter
-            </Link>
+            <Link href="/login" className="text-gray-900 font-medium hover:underline">Se connecter</Link>
           </p>
         </div>
       </div>
