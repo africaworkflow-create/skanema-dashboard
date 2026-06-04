@@ -38,7 +38,7 @@ async function detectCountry() {
 }
 
 // Pays qui gardent le 0 comme préfixe local
-const KEEPS_LEADING_ZERO = ['234', '233', '237', '242', '243', '241']
+const KEEPS_LEADING_ZERO = ['225', '237', '233', '234', '241', '242', '243', '212', '213', '33']
 
 // Normalise le numéro — retire le préfixe pays si déjà inclus
 function normalizeLocal(number, dialCode) {
