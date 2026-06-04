@@ -177,6 +177,45 @@ export default function WhatsAppPage() {
           </div>
         </div>
 
+        {/* Informations webhook — visible si bot actif ou config manuelle ouverte */}
+        {(isActive || showManual) && (
+          <div className="bg-white border border-gray-100 rounded-xl p-5">
+            <h2 className="text-sm font-semibold text-gray-900 mb-4">Configuration Webhook</h2>
+            <p className="text-xs text-gray-500 mb-4">
+              Copiez ces informations dans <strong>Meta for Developers → WhatsApp → Configuration → Webhooks</strong>.
+            </p>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">URL de rappel (Callback URL)</label>
+                <div className="flex items-center gap-2">
+                  <input readOnly value="https://api.skanema.com/webhook/whatsapp"
+                    className="input flex-1 bg-gray-50 text-xs" style={{ fontSize: '13px' }} />
+                  <button onClick={() => navigator.clipboard.writeText('https://api.skanema.com/webhook/whatsapp')}
+                    className="btn-ghost text-xs px-3 py-2 flex-shrink-0">Copier</button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">Token de vérification</label>
+                <div className="flex items-center gap-2">
+                  <input readOnly value={user?.whatsappVerifyToken || '—'}
+                    className="input flex-1 bg-gray-50 text-xs" style={{ fontSize: '13px' }} />
+                  <button onClick={() => navigator.clipboard.writeText(user?.whatsappVerifyToken || '')}
+                    className="btn-ghost text-xs px-3 py-2 flex-shrink-0">Copier</button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">Champs à souscrire (Webhook Fields)</label>
+                <div className="flex items-center gap-2">
+                  <input readOnly value="messages"
+                    className="input flex-1 bg-gray-50 text-xs" style={{ fontSize: '13px' }} />
+                  <button onClick={() => navigator.clipboard.writeText('messages')}
+                    className="btn-ghost text-xs px-3 py-2 flex-shrink-0">Copier</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Configuration manuelle — accordéon */}
         <div className="border border-gray-100 rounded-xl overflow-hidden">
           <button onClick={() => setShowManual(!showManual)}
