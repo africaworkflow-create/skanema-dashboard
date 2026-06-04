@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { useAuth } from '@/hooks/useAuth'
-import { Loader2, CheckCircle2, Wifi, WifiOff, RefreshCw } from 'lucide-react'
+import { Loader2, CheckCircle2, Wifi, WifiOff, RefreshCw, ChevronDown, Save } from 'lucide-react'
 import api from '@/lib/api'
 import Cookies from 'js-cookie'
 
@@ -16,6 +16,11 @@ export default function WhatsAppPage() {
   const [connecting, setConnecting] = useState(false)
   const [success,    setSuccess]    = useState(false)
   const [error,      setError]      = useState('')
+  const [showManual, setShowManual] = useState(false)
+  const [manual,     setManual]     = useState({ phoneNumberId: '', accessToken: '', verifyToken: '' })
+  const [manualLoading, setManualLoading] = useState(false)
+  const [manualSuccess, setManualSuccess] = useState(false)
+  const [manualError,   setManualError]   = useState('')
 
   const pid      = user?.whatsappPhoneNumberId
   const isActive = pid && !pid.startsWith('PENDING_') && pid !== 'A_CONFIGURER'
@@ -61,7 +66,29 @@ export default function WhatsAppPage() {
     }
 
     window.addEventListener('message', handleMessage)
-    return () => window.removeEventListener('message', handleMessage)
+    const handleManualSave = async () => {
+    if (!manual.phoneNumberId.trim() || !manual.accessToken.trim()) {
+      setManualError('Phone Number ID et Access Token sont requis.')
+      return
+    }
+    setManualLoading(true)
+    setManualError('')
+    try {
+      await api.patch('/api/auth/whatsapp', {
+        phoneNumberId: manual.phoneNumberId.trim(),
+        accessToken  : manual.accessToken.trim(),
+        verifyToken  : manual.verifyToken.trim() || ('skanema_' + Date.now()),
+      })
+      setManualSuccess(true)
+      setTimeout(() => window.location.reload(), 1500)
+    } catch (err) {
+      setManualError(err.response?.data?.message || 'Erreur lors de la sauvegarde.')
+    } finally {
+      setManualLoading(false)
+    }
+  }
+
+  return () => window.removeEventListener('message', handleMessage)
   }, [])
 
   const handleSignupComplete = async (code, wabaId, phoneNumberId) => {
@@ -219,6 +246,89 @@ export default function WhatsAppPage() {
               </div>
             ))}
           </div>
+        </div>
+
+
+        {/* Configuration manuelle — accordéon discret */}
+        <div className="border border-gray-100 rounded-xl overflow-hidden">
+          <button
+            onClick={() => setShowManual(!showManual)}
+            className="w-full flex items-center justify-between px-5 py-4 bg-white hover:bg-gray-50 transition-colors"
+          >
+            <div>
+              <p className="text-sm font-medium text-gray-700 text-left">Configuration manuelle</p>
+              <p className="text-xs text-gray-400 mt-0.5 text-left">Pour les utilisateurs avancés — saisissez vos credentials WhatsApp Cloud API</p>
+            </div>
+            <ChevronDown size={16} className={`text-gray-400 transition-transform flex-shrink-0 ml-3 ${showManual ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showManual && (
+            <div className="bg-gray-50 border-t border-gray-100 p-5 space-y-4">
+              <div className="bg-amber-50 border border-amber-100 rounded-lg px-4 py-3">
+                <p className="text-xs text-amber-700">
+                  Ces informations se trouvent dans votre <strong>Meta for Developers</strong> → WhatsApp → API Setup.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">Phone Number ID *</label>
+                <input
+                  type="text"
+                  value={manual.phoneNumberId}
+                  onChange={e => setManual(m => ({ ...m, phoneNumberId: e.target.value }))}
+                  placeholder="Ex: 123456789012345"
+                  className="input w-full"
+                  style={{ fontSize: '14px' }}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">Access Token *</label>
+                <input
+                  type="password"
+                  value={manual.accessToken}
+                  onChange={e => setManual(m => ({ ...m, accessToken: e.target.value }))}
+                  placeholder="EAAxxxxxxx..."
+                  className="input w-full"
+                  style={{ fontSize: '14px' }}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">Verify Token <span className="text-gray-400">(optionnel)</span></label>
+                <input
+                  type="text"
+                  value={manual.verifyToken}
+                  onChange={e => setManual(m => ({ ...m, verifyToken: e.target.value }))}
+                  placeholder="Généré automatiquement si vide"
+                  className="input w-full"
+                  style={{ fontSize: '14px' }}
+                />
+              </div>
+
+              {manualError && (
+                <div className="bg-red-50 border border-red-100 rounded-lg px-4 py-3">
+                  <p className="text-xs text-red-600">{manualError}</p>
+                </div>
+              )}
+
+              {manualSuccess && (
+                <div className="flex items-center gap-2 text-green-600">
+                  <CheckCircle2 size={16} />
+                  <p className="text-xs font-medium">Configuration sauvegardée ! Rechargement…</p>
+                </div>
+              )}
+
+              <button
+                onClick={handleManualSave}
+                disabled={manualLoading || manualSuccess}
+                className="btn-primary flex items-center gap-2"
+              >
+                {manualLoading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                {manualLoading ? 'Sauvegarde…' : 'Enregistrer'}
+              </button>
+            </div>
+          )}
         </div>
 
       </div>
