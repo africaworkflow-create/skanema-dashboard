@@ -156,7 +156,6 @@ export default function ParametresPage() {
                     <ExternalLink size={13} />
                   </a>
                 </div>
-                <p className="text-xs text-gray-400 mt-1">Partagez ce lien avec vos clients.</p>
               </div>
             )}
             <div>
