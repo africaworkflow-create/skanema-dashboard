@@ -37,11 +37,16 @@ async function detectCountry() {
   }
 }
 
+// Pays qui gardent le 0 comme préfixe local
+const KEEPS_LEADING_ZERO = ['234', '233', '237', '242', '243', '241']
+
 // Normalise le numéro — retire le préfixe pays si déjà inclus
 function normalizeLocal(number, dialCode) {
   let digits = number.replace(/\D/g, '')
   if (digits.startsWith(dialCode)) digits = digits.slice(dialCode.length)
-  if (digits.startsWith('0'))     digits = digits.slice(1)
+  // Retire le 0 initial seulement si le pays ne l'utilise pas
+  if (digits.startsWith('0') && !KEEPS_LEADING_ZERO.includes(dialCode))
+    digits = digits.slice(1)
   return digits
 }
 
