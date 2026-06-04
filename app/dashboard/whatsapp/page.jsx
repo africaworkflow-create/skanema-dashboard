@@ -177,36 +177,6 @@ export default function WhatsAppPage() {
           </div>
         </div>
 
-        {/* Webhook */}
-        <div className="bg-white border border-gray-100 rounded-xl p-5 space-y-3">
-          <div className="flex items-center gap-2 mb-1">
-            <Webhook size={15} className="text-gray-400" />
-            <h2 className="text-sm font-semibold text-gray-900">URL du Webhook</h2>
-          </div>
-          <p className="text-xs text-gray-400">
-            Copiez cette URL dans votre dashboard Meta → WhatsApp → Configuration → Webhooks.
-          </p>
-          <div className="bg-gray-50 border border-gray-100 rounded-lg px-3 py-2.5 font-mono text-xs text-gray-700 break-all select-all">
-            https://api.skanema.com/webhook/whatsapp
-          </div>
-          {user?.whatsappVerifyToken && (
-            <div className="bg-gray-50 border border-gray-100 rounded-lg px-3 py-2.5">
-              <p className="text-2xs text-gray-400 mb-0.5">Token de vérification</p>
-              <p className="font-mono text-xs text-gray-700 break-all select-all">{user.whatsappVerifyToken}</p>
-            </div>
-          )}
-          <div className="grid grid-cols-2 gap-3 text-xs text-gray-500 bg-gray-50 rounded-lg p-3">
-            <div>
-              <p className="text-2xs text-gray-400 mb-0.5">Événements requis</p>
-              <p className="font-medium text-gray-700">messages</p>
-            </div>
-            <div>
-              <p className="text-2xs text-gray-400 mb-0.5">Mode</p>
-              <p className="font-medium text-gray-700">subscribe</p>
-            </div>
-          </div>
-        </div>
-
         {/* Configuration manuelle — accordéon */}
         <div className="border border-gray-100 rounded-xl overflow-hidden">
           <button onClick={() => setShowManual(!showManual)}
@@ -267,6 +237,36 @@ export default function WhatsAppPage() {
                 {manualLoading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                 {manualLoading ? 'Sauvegarde…' : 'Enregistrer'}
               </button>
+
+              {/* Webhook info */}
+              <div className="border-t border-gray-200 pt-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Webhook size={14} className="text-gray-400" />
+                  <p className="text-xs font-medium text-gray-700">URL du Webhook</p>
+                </div>
+                <p className="text-xs text-gray-400">
+                  Copiez dans Meta → WhatsApp → Configuration → Webhooks.
+                </p>
+                <div className="bg-white border border-gray-200 rounded-lg px-3 py-2.5 font-mono text-xs text-gray-700 break-all select-all">
+                  https://api.skanema.com/webhook/whatsapp
+                </div>
+                {user?.whatsappVerifyToken && (
+                  <div className="bg-white border border-gray-200 rounded-lg px-3 py-2.5">
+                    <p className="text-2xs text-gray-400 mb-0.5">Token de vérification</p>
+                    <p className="font-mono text-xs text-gray-700 break-all select-all">{user.whatsappVerifyToken}</p>
+                  </div>
+                )}
+                <div className="grid grid-cols-2 gap-3 text-xs bg-white border border-gray-200 rounded-lg p-3">
+                  <div>
+                    <p className="text-2xs text-gray-400 mb-0.5">Événements requis</p>
+                    <p className="font-medium text-gray-700">messages</p>
+                  </div>
+                  <div>
+                    <p className="text-2xs text-gray-400 mb-0.5">Mode</p>
+                    <p className="font-medium text-gray-700">subscribe</p>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
