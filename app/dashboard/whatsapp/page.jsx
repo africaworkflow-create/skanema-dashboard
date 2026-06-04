@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { useAuth } from '@/hooks/useAuth'
-import { Loader2, CheckCircle2, Wifi, WifiOff, RefreshCw, ChevronDown, Save } from 'lucide-react'
+import { Loader2, CheckCircle2, Wifi, WifiOff, RefreshCw, ChevronDown, Save, Webhook } from 'lucide-react'
 import api from '@/lib/api'
 
 const META_APP_ID = process.env.NEXT_PUBLIC_META_APP_ID || '1320436230274815'
@@ -177,44 +177,35 @@ export default function WhatsAppPage() {
           </div>
         </div>
 
-        {/* Informations webhook — visible si bot actif ou config manuelle ouverte */}
-        {(isActive || showManual) && (
-          <div className="bg-white border border-gray-100 rounded-xl p-5">
-            <h2 className="text-sm font-semibold text-gray-900 mb-4">Configuration Webhook</h2>
-            <p className="text-xs text-gray-500 mb-4">
-              Copiez ces informations dans <strong>Meta for Developers → WhatsApp → Configuration → Webhooks</strong>.
-            </p>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">URL de rappel (Callback URL)</label>
-                <div className="flex items-center gap-2">
-                  <input readOnly value="https://api.skanema.com/webhook/whatsapp"
-                    className="input flex-1 bg-gray-50 text-xs" style={{ fontSize: '13px' }} />
-                  <button onClick={() => navigator.clipboard.writeText('https://api.skanema.com/webhook/whatsapp')}
-                    className="btn-ghost text-xs px-3 py-2 flex-shrink-0">Copier</button>
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">Token de vérification</label>
-                <div className="flex items-center gap-2">
-                  <input readOnly value={user?.whatsappVerifyToken || '—'}
-                    className="input flex-1 bg-gray-50 text-xs" style={{ fontSize: '13px' }} />
-                  <button onClick={() => navigator.clipboard.writeText(user?.whatsappVerifyToken || '')}
-                    className="btn-ghost text-xs px-3 py-2 flex-shrink-0">Copier</button>
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">Champs à souscrire (Webhook Fields)</label>
-                <div className="flex items-center gap-2">
-                  <input readOnly value="messages"
-                    className="input flex-1 bg-gray-50 text-xs" style={{ fontSize: '13px' }} />
-                  <button onClick={() => navigator.clipboard.writeText('messages')}
-                    className="btn-ghost text-xs px-3 py-2 flex-shrink-0">Copier</button>
-                </div>
-              </div>
+        {/* Webhook */}
+        <div className="bg-white border border-gray-100 rounded-xl p-5 space-y-3">
+          <div className="flex items-center gap-2 mb-1">
+            <Webhook size={15} className="text-gray-400" />
+            <h2 className="text-sm font-semibold text-gray-900">URL du Webhook</h2>
+          </div>
+          <p className="text-xs text-gray-400">
+            Copiez cette URL dans votre dashboard Meta → WhatsApp → Configuration → Webhooks.
+          </p>
+          <div className="bg-gray-50 border border-gray-100 rounded-lg px-3 py-2.5 font-mono text-xs text-gray-700 break-all select-all">
+            https://api.skanema.com/webhook/whatsapp
+          </div>
+          {user?.whatsappVerifyToken && (
+            <div className="bg-gray-50 border border-gray-100 rounded-lg px-3 py-2.5">
+              <p className="text-2xs text-gray-400 mb-0.5">Token de vérification</p>
+              <p className="font-mono text-xs text-gray-700 break-all select-all">{user.whatsappVerifyToken}</p>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-3 text-xs text-gray-500 bg-gray-50 rounded-lg p-3">
+            <div>
+              <p className="text-2xs text-gray-400 mb-0.5">Événements requis</p>
+              <p className="font-medium text-gray-700">messages</p>
+            </div>
+            <div>
+              <p className="text-2xs text-gray-400 mb-0.5">Mode</p>
+              <p className="font-medium text-gray-700">subscribe</p>
             </div>
           </div>
-        )}
+        </div>
 
         {/* Configuration manuelle — accordéon */}
         <div className="border border-gray-100 rounded-xl overflow-hidden">
