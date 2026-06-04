@@ -28,6 +28,14 @@ export const metadata = {
   creator : 'Skanema',
   publisher: 'Skanema',
 
+  manifest: '/manifest.json',
+  themeColor: '#DC2626',
+  appleWebApp: {
+    capable    : true,
+    statusBarStyle: 'default',
+    title      : 'Skanema',
+},
+
   openGraph: {
     type       : 'website',
     locale     : 'fr_SN',
@@ -77,6 +85,13 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="fr">
+      <head>
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Skanema" />
+        <link rel="apple-touch-icon" href="/icon_SKANEMA.png" />
+        <link rel="manifest" href="/manifest.json" />
+      </head>
       <body>
         <Providers>
           {children}

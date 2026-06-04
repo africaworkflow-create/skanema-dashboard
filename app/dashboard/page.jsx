@@ -16,6 +16,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid
 } from 'recharts'
+import { PushNotificationSetup } from '@/components/ui/PushNotificationSetup'
 
 const DAYS_FR = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam']
 
@@ -100,6 +101,7 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="space-y-5">
+        <PushNotificationSetup />
         <EmailVerificationBanner />
         <SetupChecklist />
 
