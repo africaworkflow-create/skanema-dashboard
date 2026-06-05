@@ -37,10 +37,16 @@ export function PushNotificationSetup() {
   const [loading,    setLoading]    = useState(false)
 
   useEffect(() => {
-    // Vérifie tout côté client seulement après montage complet
     const d = detectDevice()
     setDevice(d)
     setIsStandalone(isInStandaloneMode())
+
+    // Sur desktop — ne jamais afficher
+    if (d === 'desktop') {
+      setDismissed(true)
+      setMounted(true)
+      return
+    }
 
     if (localStorage.getItem('skanema_push_dismissed')) {
       setDismissed(true)
