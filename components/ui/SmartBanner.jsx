@@ -224,6 +224,11 @@ export function SmartBanner() {
       </div>
     )
   }
+  return (
+  <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-5 text-xs">
+    device: {device} | email: {String(user?.emailVerified)} | push: {pushStatus} | dismissed: {String(pushDismissed)}
+  </div>
+)
 
   return null
 }
