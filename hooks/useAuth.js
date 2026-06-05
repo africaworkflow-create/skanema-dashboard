@@ -32,10 +32,17 @@ export function AuthProvider({ children }) {
       try { setUser(JSON.parse(data)) } catch (_) {}
     }
 
-    // Enrichit avec /api/auth/me
+    // Enrichit avec /api/auth/me et met à jour le cookie
     api.get('/api/auth/me').then(res => {
       const d = res.data.data
-      setUser(prev => prev ? { ...prev, ...d } : d)
+      try {
+        const prev   = JSON.parse(Cookies.get('skanema_user') || '{}')
+        const merged = { ...prev, ...d }
+        Cookies.set('skanema_user', JSON.stringify(merged), { expires: 7, sameSite: 'lax' })
+        setUser(merged)
+      } catch (_) {
+        setUser(d)
+      }
     }).catch(() => {}).finally(() => {
       setLoading(false)
     })
