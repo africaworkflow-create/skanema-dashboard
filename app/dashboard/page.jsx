@@ -4,7 +4,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { SetupChecklist } from '@/components/ui/SetupChecklist'
 import { MetricCard } from '@/components/ui/MetricCard'
 import { Badge } from '@/components/ui/Badge'
-import { EmailVerificationBanner } from '@/components/ui/EmailVerificationBanner'
+import { SmartBanner } from '@/components/ui/SmartBanner'
 import { getStats, getOrders } from '@/lib/api'
 import { formatFCFA, formatRelative, STATUS_LABELS } from '@/lib/utils'
 import {
@@ -16,7 +16,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid
 } from 'recharts'
-import { PushNotificationSetup } from '@/components/ui/PushNotificationSetup'
+
 
 const DAYS_FR = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam']
 
@@ -101,8 +101,7 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="space-y-5">
-        <PushNotificationSetup />
-        <EmailVerificationBanner />
+        <SmartBanner />
         <SetupChecklist />
 
           {/* Métriques */}
