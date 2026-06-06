@@ -5,6 +5,7 @@ import { Loader2, CheckCircle2, Store, Lock, Bell, Copy, ExternalLink } from 'lu
 import { useAuth } from '@/hooks/useAuth'
 import api from '@/lib/api'
 import { ImageUpload } from '@/components/ui/ImageUpload'
+import { QRCodeSection } from '@/components/ui/QRCodeSection'
 
 const PLAN_LIMITS = { basic: 10, pro: 25, premium: 999 }
 const PLAN_PRICE  = { basic: 15000, pro: 35000, premium: 75000 }
@@ -204,6 +205,7 @@ export default function ParametresPage() {
               {saving ? <Loader2 size={13} className="animate-spin" /> : null}
               {saved  ? <><CheckCircle2 size={13} /> Enregistré !</> : 'Enregistrer'}
             </button>
+            <QRCodeSection />
           </div>
         )}
 
