@@ -54,24 +54,50 @@ async function generateTemplate(qrUrl, format) {
   roundRect(ctx, 0, 0, W, H, isPortrait ? 80 : 100)
   ctx.fill()
 
-  const PAD = 80
+  const PAD = 120
   const logoImg = await getLogoImg()
 
   if (isPortrait) {
-    // ── FORMAT PORTRAIT — proportions corrigées ───────────────
-    // Logo grand — ~30% de la hauteur totale
-    const logoH = 280
+    const logoH = 260
     const logoW = logoH * (logoImg.width / logoImg.height)
     ctx.drawImage(logoImg, (W - logoW) / 2, PAD, logoW, logoH)
 
-    // Tagline — bien espacée du logo
-    ctx.font = '58px Inter, Arial, sans-serif'
+    ctx.font = '56px Inter, Arial, sans-serif'
+    ctx.fillStyle = 'rgba(255,255,255,0.9)'
+    ctx.textAlign = 'center'
+    const tagY = PAD + logoH + 90
+    ctx.fillText('Commande facile livraison rapide', W / 2, tagY)
+
+    const qrPad  = 50
+    const qrSize = Math.round(W * 0.62)
+    const boxW   = qrSize + qrPad * 2
+    const boxH   = boxW
+    const boxX   = (W - boxW) / 2
+    const boxY   = tagY + 90
+
+    ctx.fillStyle = '#ffffff'
+    roundRect(ctx, boxX, boxY, boxW, boxH, 60)
+    ctx.fill()
+
+    const qrImg = await loadImage('https://api.qrserver.com/v1/create-qr-code/?size=1200x1200&data=' + encodeURIComponent(qrUrl) + '&bgcolor=ffffff&color=000000&margin=0')
+    ctx.drawImage(qrImg, boxX + qrPad, boxY + qrPad, qrSize, qrSize)
+
+    // CTA en bas
+    ctx.fillStyle = 'rgba(255,255,255,0.75)'
+    ctx.font = '46px Inter, Arial, sans-serif'
+    ctx.fillText('Scannez & commandez 📱', W / 2, boxY + boxH + 90)
+
+  } else {
+    const logoH = 230
+    const logoW = logoH * (logoImg.width / logoImg.height)
+    ctx.drawImage(logoImg, (W - logoW) / 2, PAD, logoW, logoH)
+
+    ctx.font = '50px Inter, Arial, sans-serif'
     ctx.fillStyle = 'rgba(255,255,255,0.9)'
     ctx.textAlign = 'center'
     const tagY = PAD + logoH + 80
     ctx.fillText('Commande facile livraison rapide', W / 2, tagY)
 
-    // QR code — 60% de la largeur seulement
     const qrPad  = 50
     const qrSize = Math.round(W * 0.62)
     const boxW   = qrSize + qrPad * 2
@@ -86,40 +112,9 @@ async function generateTemplate(qrUrl, format) {
     const qrImg = await loadImage('https://api.qrserver.com/v1/create-qr-code/?size=1200x1200&data=' + encodeURIComponent(qrUrl) + '&bgcolor=ffffff&color=000000&margin=0')
     ctx.drawImage(qrImg, boxX + qrPad, boxY + qrPad, qrSize, qrSize)
 
-    // skanema.com centré sous le QR
-    ctx.fillStyle = 'rgba(255,255,255,0.6)'
-    ctx.font = '46px Inter, Arial, sans-serif'
-    ctx.fillText('skanema.com', W / 2, boxY + boxH + 80)
-
-  } else {
-    // ── FORMAT CARRÉ — proportions corrigées ──────────────────
-    const logoH = 240
-    const logoW = logoH * (logoImg.width / logoImg.height)
-    ctx.drawImage(logoImg, (W - logoW) / 2, PAD, logoW, logoH)
-
-    ctx.font = '52px Inter, Arial, sans-serif'
-    ctx.fillStyle = 'rgba(255,255,255,0.9)'
-    ctx.textAlign = 'center'
-    const tagY = PAD + logoH + 70
-    ctx.fillText('Commande facile livraison rapide', W / 2, tagY)
-
-    const qrPad  = 50
-    const qrSize = Math.round(W * 0.62)
-    const boxW   = qrSize + qrPad * 2
-    const boxH   = boxW
-    const boxX   = (W - boxW) / 2
-    const boxY   = tagY + 60
-
-    ctx.fillStyle = '#ffffff'
-    roundRect(ctx, boxX, boxY, boxW, boxH, 60)
-    ctx.fill()
-
-    const qrImg = await loadImage('https://api.qrserver.com/v1/create-qr-code/?size=1200x1200&data=' + encodeURIComponent(qrUrl) + '&bgcolor=ffffff&color=000000&margin=0')
-    ctx.drawImage(qrImg, boxX + qrPad, boxY + qrPad, qrSize, qrSize)
-
-    ctx.fillStyle = 'rgba(255,255,255,0.6)'
+    ctx.fillStyle = 'rgba(255,255,255,0.75)'
     ctx.font = '42px Inter, Arial, sans-serif'
-    ctx.fillText('skanema.com', W / 2, boxY + boxH + 70)
+    ctx.fillText('Scannez & commandez 📱', W / 2, boxY + boxH + 80)
   }
 
   return canvas
