@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Mail, Bell, Zap, X, Loader2, CheckCircle2, Share, Plus, ChevronRight } from 'lucide-react'
+import { Mail, Bell, X, Loader2, Share, Plus } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import api from '@/lib/api'
 import Cookies from 'js-cookie'
@@ -32,7 +32,7 @@ function isInStandaloneMode() {
 }
 
 // ── Bannière email ───────────────────────────────────────────────
-function EmailBanner({ onResend }) {
+function EmailBanner() {
   const [sending, setSending] = useState(false)
   const [sent,    setSent]    = useState(false)
 
@@ -50,7 +50,7 @@ function EmailBanner({ onResend }) {
   }
 
   return (
-    <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3.5">
+    <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3.5 mb-5">
       <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
         <Mail size={15} className="text-amber-600" />
       </div>
@@ -73,10 +73,10 @@ function EmailBanner({ onResend }) {
   )
 }
 
-// ── Bannière push iOS — guide ────────────────────────────────────
+// ── Guide installation iOS ───────────────────────────────────────
 function IOSGuide({ onDismiss }) {
   return (
-    <div className="bg-gray-900 rounded-xl p-5">
+    <div className="bg-gray-900 rounded-xl p-5 mb-5">
       <div className="flex items-center justify-between mb-3">
         <p className="text-sm font-semibold text-white">Installer Skanema sur votre téléphone</p>
         <button onClick={onDismiss} className="text-gray-500 hover:text-gray-300 p-1">
@@ -88,8 +88,8 @@ function IOSGuide({ onDismiss }) {
       </p>
       <div className="space-y-3">
         {[
-          { n: 1, text: 'Appuyez sur le bouton Partager', sub: 'En bas de Safari', icon: <Share size={13} className="text-blue-400" /> },
-          { n: 2, text: 'Appuyez sur "Sur l\'écran d\'accueil"', sub: 'Faites défiler la liste', icon: <Plus size={13} className="text-gray-300" /> },
+          { n: 1, text: 'Appuyez sur le bouton Partager', icon: <Share size={13} className="text-blue-400" />, sub: 'En bas de Safari' },
+          { n: 2, text: 'Appuyez sur "Sur l\'écran d\'accueil"', icon: <Plus size={13} className="text-gray-300" />, sub: 'Faites défiler la liste' },
           { n: 3, text: 'Appuyez sur Ajouter', sub: 'L\'icône Skanema apparaîtra' },
         ].map(s => (
           <div key={s.n} className="flex items-start gap-3">
@@ -112,7 +112,7 @@ function IOSGuide({ onDismiss }) {
           <p className="text-xs text-green-400 font-medium pt-1">Ouvrez Skanema depuis l'écran d'accueil → pour ne rater aucune commande</p>
         </div>
       </div>
-      <button onClick={onDismiss} className="mt-4 text-xs text-gray-500 hover:text-gray-400">
+      <button onClick={onDismiss} className="mt-4 text-xs text-gray-500 hover:text-gray-400 transition-colors">
         Plus tard
       </button>
     </div>
@@ -122,7 +122,7 @@ function IOSGuide({ onDismiss }) {
 // ── Bannière push ────────────────────────────────────────────────
 function PushBanner({ onActivate, onDismiss, loading }) {
   return (
-    <div className="flex items-start gap-3 bg-gray-900 rounded-xl px-4 py-3.5">
+    <div className="flex items-start gap-3 bg-gray-900 rounded-xl px-4 py-3.5 mb-5">
       <div className="w-8 h-8 rounded-lg bg-gray-700 flex items-center justify-center flex-shrink-0 mt-0.5">
         <Bell size={15} className="text-gray-300" />
       </div>
@@ -149,7 +149,7 @@ function PushBanner({ onActivate, onDismiss, loading }) {
 
 // ── Composant principal ──────────────────────────────────────────
 export function SmartBanner() {
-  const { user } = useAuth()
+  const { user }           = useAuth()
   const [mounted,      setMounted]      = useState(false)
   const [device,       setDevice]       = useState('desktop')
   const [standalone,   setStandalone]   = useState(false)
@@ -162,18 +162,21 @@ export function SmartBanner() {
     const d = detectDevice()
     setDevice(d)
     setStandalone(isInStandaloneMode())
+
+    // Cookie de session — si "Plus tard" cliqué cette session
+    if (Cookies.get('skanema_push_later')) {
+      setPushDismissed(true)
+    }
+
     if ('Notification' in window) setPushStatus(Notification.permission)
     setMounted(true)
   }, [])
 
-  // ── Dismiss checklist en DB ──────────────────────────────────────
-  const handleDismissChecklist = async () => {
-    try { await api.patch('/api/auth/ui-preferences', { checklistDismissed: true }) } catch (_) {}
-  }
-
-  // ── Activer push ─────────────────────────────────────────────────
   const handleActivatePush = async () => {
-    if (device === 'ios' && !standalone) { setShowIOSGuide(true); return }
+    if (device === 'ios' && !standalone) {
+      setShowIOSGuide(true)
+      return
+    }
     setPushLoading(true)
     try {
       const permission = await Notification.requestPermission()
@@ -196,33 +199,28 @@ export function SmartBanner() {
     finally { setPushLoading(false) }
   }
 
+  // "Plus tard" — cookie de session uniquement, revient à la prochaine connexion
+  const handleDismiss = () => {
+    Cookies.set('skanema_push_later', '1') // pas d'expires = session cookie
+    setPushDismissed(true)
+    setShowIOSGuide(false)
+  }
+
   if (!mounted || !user) return null
 
   const emailUnverified = user.emailVerified === false
   const pushGranted     = pushStatus === 'granted'
   const isDesktop       = device === 'desktop'
-  // Sur iOS Safari normal Notification n'existe pas — c'est normal, on montre quand même le guide
-  const pushUnsupported = device === 'desktop' || (device !== 'ios' && !('Notification' in window))
+  const pushUnsupported = device === 'desktop' ||
+    (device !== 'ios' && !('Notification' in window) && !('serviceWorker' in navigator))
 
   // Priorité 1 — Email non vérifié
-  if (emailUnverified) {
-    return <div className="mb-5"><EmailBanner /></div>
-  }
+  if (emailUnverified) return <EmailBanner />
 
-  // Priorité 2 — Push non activé (mobile uniquement)
+  // Priorité 2 — Push non activé sur mobile
   if (!isDesktop && !pushGranted && !pushUnsupported && !pushDismissed) {
-    if (showIOSGuide) {
-      return <div className="mb-5"><IOSGuide onDismiss={() => { setShowIOSGuide(false); setPushDismissed(true) }} /></div>
-    }
-    return (
-      <div className="mb-5">
-        <PushBanner
-          onActivate={handleActivatePush}
-          onDismiss={() => setPushDismissed(true)}
-          loading={pushLoading}
-        />
-      </div>
-    )
+    if (showIOSGuide) return <IOSGuide onDismiss={handleDismiss} />
+    return <PushBanner onActivate={handleActivatePush} onDismiss={handleDismiss} loading={pushLoading} />
   }
 
   return null
