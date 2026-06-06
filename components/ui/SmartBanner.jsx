@@ -199,10 +199,10 @@ export function SmartBanner() {
   if (!mounted || !user) return null
 
   const emailUnverified = user.emailVerified === false
-  const checklistDone   = user.uiPreferences?.checklistDismissed === true
   const pushGranted     = pushStatus === 'granted'
   const isDesktop       = device === 'desktop'
-  const pushUnsupported = !('Notification' in window) || !('serviceWorker' in navigator)
+  // Sur iOS Safari normal Notification n'existe pas — c'est normal, on montre quand même le guide
+  const pushUnsupported = device === 'desktop' || (device !== 'ios' && !('Notification' in window))
 
   // Priorité 1 — Email non vérifié
   if (emailUnverified) {
@@ -224,11 +224,6 @@ export function SmartBanner() {
       </div>
     )
   }
-  return (
-  <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-5 text-xs">
-    device: {device} | email: {String(user?.emailVerified)} | push: {pushStatus} | dismissed: {String(pushDismissed)}
-  </div>
-)
 
   return null
 }
