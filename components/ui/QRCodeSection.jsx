@@ -58,26 +58,26 @@ async function generateTemplate(qrUrl, format) {
   const logoImg = await getLogoImg()
 
   if (isPortrait) {
-    // ── FORMAT PORTRAIT (comptoir) ───────────────────────────
-    // Logo centré en haut
-    const logoH = 200
+    // ── FORMAT PORTRAIT — proportions corrigées ───────────────
+    // Logo grand — ~30% de la hauteur totale
+    const logoH = 280
     const logoW = logoH * (logoImg.width / logoImg.height)
     ctx.drawImage(logoImg, (W - logoW) / 2, PAD, logoW, logoH)
 
-    // Tagline
-    ctx.font = '54px Inter, Arial, sans-serif'
+    // Tagline — bien espacée du logo
+    ctx.font = '58px Inter, Arial, sans-serif'
     ctx.fillStyle = 'rgba(255,255,255,0.9)'
     ctx.textAlign = 'center'
-    const tagY = PAD + logoH + 50
+    const tagY = PAD + logoH + 80
     ctx.fillText('Commande facile livraison rapide', W / 2, tagY)
 
-    // QR code — largeur maximale avec marges égales
+    // QR code — 60% de la largeur seulement
     const qrPad  = 50
-    const qrSize = W - PAD * 2 - qrPad * 2
-    const boxX   = PAD
-    const boxY   = tagY + 40
-    const boxW   = W - PAD * 2
+    const qrSize = Math.round(W * 0.62)
+    const boxW   = qrSize + qrPad * 2
     const boxH   = boxW
+    const boxX   = (W - boxW) / 2
+    const boxY   = tagY + 80
 
     ctx.fillStyle = '#ffffff'
     roundRect(ctx, boxX, boxY, boxW, boxH, 60)
@@ -86,29 +86,29 @@ async function generateTemplate(qrUrl, format) {
     const qrImg = await loadImage('https://api.qrserver.com/v1/create-qr-code/?size=1200x1200&data=' + encodeURIComponent(qrUrl) + '&bgcolor=ffffff&color=000000&margin=0')
     ctx.drawImage(qrImg, boxX + qrPad, boxY + qrPad, qrSize, qrSize)
 
-    // skanema.com
+    // skanema.com centré sous le QR
     ctx.fillStyle = 'rgba(255,255,255,0.6)'
-    ctx.font = '44px Inter, Arial, sans-serif'
-    ctx.fillText('skanema.com', W / 2, boxY + boxH + 70)
+    ctx.font = '46px Inter, Arial, sans-serif'
+    ctx.fillText('skanema.com', W / 2, boxY + boxH + 80)
 
   } else {
-    // ── FORMAT CARRÉ (sacs) ───────────────────────────────────
-    const logoH = 170
+    // ── FORMAT CARRÉ — proportions corrigées ──────────────────
+    const logoH = 240
     const logoW = logoH * (logoImg.width / logoImg.height)
     ctx.drawImage(logoImg, (W - logoW) / 2, PAD, logoW, logoH)
 
-    ctx.font = '48px Inter, Arial, sans-serif'
+    ctx.font = '52px Inter, Arial, sans-serif'
     ctx.fillStyle = 'rgba(255,255,255,0.9)'
     ctx.textAlign = 'center'
-    const tagY = PAD + logoH + 44
+    const tagY = PAD + logoH + 70
     ctx.fillText('Commande facile livraison rapide', W / 2, tagY)
 
     const qrPad  = 50
-    const qrSize = W - PAD * 2 - qrPad * 2
-    const boxX   = PAD
-    const boxY   = tagY + 30
-    const boxW   = W - PAD * 2
+    const qrSize = Math.round(W * 0.62)
+    const boxW   = qrSize + qrPad * 2
     const boxH   = boxW
+    const boxX   = (W - boxW) / 2
+    const boxY   = tagY + 60
 
     ctx.fillStyle = '#ffffff'
     roundRect(ctx, boxX, boxY, boxW, boxH, 60)
@@ -118,8 +118,8 @@ async function generateTemplate(qrUrl, format) {
     ctx.drawImage(qrImg, boxX + qrPad, boxY + qrPad, qrSize, qrSize)
 
     ctx.fillStyle = 'rgba(255,255,255,0.6)'
-    ctx.font = '40px Inter, Arial, sans-serif'
-    ctx.fillText('skanema.com', W / 2, boxY + boxH + 60)
+    ctx.font = '42px Inter, Arial, sans-serif'
+    ctx.fillText('skanema.com', W / 2, boxY + boxH + 70)
   }
 
   return canvas
