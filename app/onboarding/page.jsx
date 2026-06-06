@@ -205,14 +205,14 @@ function OnboardingContent() {
           <div className="flex items-center gap-2 mb-8">
             {STEPS.map((s, i) => (
               <div key={s.n} className="flex items-center gap-2">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
+                <div className={`w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold transition-all duration-300 ${
                   s.n < step   ? 'bg-green-500 text-white' :
                   s.n === step ? 'bg-gray-900 text-white'  : 'bg-gray-100 text-gray-400'
                 }`}>
                   {s.n < step ? <CheckCircle2 size={13} /> : s.n}
                 </div>
-                <span className={`text-xs ${s.n === step ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>{s.label}</span>
-                {i < 2 && <div className="w-6 h-px bg-gray-200 mx-1" />}
+                <span className={`text-xs leading-tight ${s.n === step ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>{s.label}</span>
+                {i < 2 && <div className="w-4 h-px bg-gray-200 mx-1 flex-shrink-0" />}
               </div>
             ))}
           </div>
