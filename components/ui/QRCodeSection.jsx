@@ -82,10 +82,7 @@ async function generateTemplate(qrUrl, format) {
     const qrImg = await loadImage('https://api.qrserver.com/v1/create-qr-code/?size=1200x1200&data=' + encodeURIComponent(qrUrl) + '&bgcolor=ffffff&color=000000&margin=0')
     ctx.drawImage(qrImg, boxX + qrPad, boxY + qrPad, qrSize, qrSize)
 
-    // CTA en bas
-    ctx.fillStyle = 'rgba(255,255,255,0.75)'
-    ctx.font = '46px Inter, Arial, sans-serif'
-    ctx.fillText('Scannez & commandez 📱', W / 2, boxY + boxH + 90)
+   
 
   } else {
     const logoH = 230
