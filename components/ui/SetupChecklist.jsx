@@ -6,7 +6,7 @@ import api, { getMenu, getZones } from '@/lib/api'
 
 const STEPS = [
   {
-    id  : 'account',
+    id   : 'account',
     label: 'Compte créé',
     desc : 'Votre restaurant est enregistré sur Skanema.',
     done : true,
@@ -14,7 +14,7 @@ const STEPS = [
     cta  : null,
   },
   {
-    id  : 'menu',
+    id   : 'menu',
     label: 'Ajoutez votre premier plat',
     desc : 'Commencez par ajouter vos plats avec photos et prix.',
     done : false,
@@ -22,7 +22,7 @@ const STEPS = [
     cta  : 'Ajouter un plat →',
   },
   {
-    id  : 'zones',
+    id   : 'zones',
     label: 'Configurez vos zones de livraison',
     desc : 'Définissez vos zones et tarifs de livraison.',
     done : false,
@@ -30,26 +30,28 @@ const STEPS = [
     cta  : 'Configurer les zones →',
   },
   {
-    id      : 'whatsapp',
-    label   : 'Connectez votre WhatsApp Business',
-    desc    : 'Connectez votre numéro WhatsApp Business pour activer votre bot de commande.',
-    done    : false,
-    link    : '/dashboard/whatsapp',
-    cta     : 'Connecter WhatsApp →',
+    id   : 'whatsapp',
+    label: 'Connectez votre WhatsApp Business',
+    desc : 'Connectez votre numéro WhatsApp Business pour activer votre bot de commande.',
+    done : false,
+    link : '/dashboard/whatsapp',
+    cta  : 'Connecter WhatsApp →',
   },
 ]
 
 export function SetupChecklist() {
-  const { user }            = useAuth()
-  const [steps,    setSteps]    = useState(STEPS)
-  const [expanded, setExpanded] = useState(null)
-  const [loading,  setLoading]  = useState(true)
+  const { user, loading: authLoading } = useAuth()
+  const [steps,     setSteps]     = useState(STEPS)
+  const [expanded,  setExpanded]  = useState(null)
+  const [loading,   setLoading]   = useState(true)
   const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
+    // Attend que /me soit complètement chargé
+    if (authLoading) return
     if (!user?.restaurantId) return
 
-    // Vérifie si dismissed en DB
+    // Vérifie dismissed en DB — disponible seulement après /me
     if (user?.uiPreferences?.checklistDismissed) {
       setDismissed(true)
       setLoading(false)
@@ -77,16 +79,16 @@ export function SetupChecklist() {
 
         setSteps(prev => prev.map(s => ({
           ...s,
-          done: s.id === 'account'  ? true    :
-                s.id === 'menu'     ? hasMenu :
+          done: s.id === 'account'  ? true     :
+                s.id === 'menu'     ? hasMenu  :
                 s.id === 'zones'    ? hasZones :
-                s.id === 'whatsapp' ? hasWA   : false,
+                s.id === 'whatsapp' ? hasWA    : false,
         })))
       } catch (_) {}
       finally { setLoading(false) }
     }
     check()
-  }, [user])
+  }, [user, authLoading])
 
   const doneCount = steps.filter(s => s.done).length
   const allDone   = doneCount === steps.length
@@ -97,7 +99,7 @@ export function SetupChecklist() {
     try { await api.patch('/api/auth/ui-preferences', { checklistDismissed: true }) } catch (_) {}
   }
 
-  if (dismissed || loading) return null
+  if (authLoading || dismissed || loading) return null
 
   return (
     <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden mb-6 shadow-sm">
