@@ -5,32 +5,12 @@ import api from '@/lib/api'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.skanema.com'
 
-// Logo Skanema SVG path (deux rectangles arrondis + point)
-function drawSkanemLogo(ctx, x, y, size, color = '#ffffff') {
-  ctx.fillStyle = color
-  const s = size
-
-  // Rectangle gauche grand (incliné)
-  ctx.save()
-  ctx.translate(x, y + s * 0.1)
-  ctx.rotate(-0.12)
-  roundRect(ctx, 0, 0, s * 0.32, s * 0.55, s * 0.07)
-  ctx.fill()
-  ctx.restore()
-
-  // Rectangle droit petit (incliné autre sens)
-  ctx.save()
-  ctx.translate(x + s * 0.38, y + s * 0.18)
-  ctx.rotate(0.08)
-  roundRect(ctx, 0, 0, s * 0.28, s * 0.48, s * 0.06)
-  ctx.fill()
-  ctx.restore()
-
-  // Point blanc (trou dans rectangle droit)
-  ctx.fillStyle = '#DC2626'
-  ctx.beginPath()
-  ctx.arc(x + s * 0.52, y + s * 0.54, s * 0.055, 0, Math.PI * 2)
-  ctx.fill()
+// Logo chargé depuis public/
+let _logoImg = null
+async function getLogoImg() {
+  if (_logoImg) return _logoImg
+  _logoImg = await loadImage('https://dashboard.skanema.com/logo_red.png')
+  return _logoImg
 }
 
 function roundRect(ctx, x, y, w, h, r) {
@@ -77,15 +57,12 @@ async function generateTemplate(qrUrl, format) {
   if (isPortrait) {
     // ── FORMAT PORTRAIT (comptoir) ───────────────────────────
 
-    // Logo icon
-    const logoSize = 110
-    drawSkanemLogo(ctx, 80, 80, logoSize)
-
-    // Texte SKANEMA
-    ctx.fillStyle = '#ffffff'
-    ctx.font = 'bold 130px Inter, Arial, sans-serif'
-    ctx.letterSpacing = '2px'
-    ctx.fillText('SKANEMA', 210, 170)
+    // Logo Skanema (image réelle)
+    const logoImg = await getLogoImg()
+    // Le logo est 1080x360 environ — on le place en haut centré
+    const logoH = 160
+    const logoW = logoH * (logoImg.width / logoImg.height)
+    ctx.drawImage(logoImg, (W - logoW) / 2, 60, logoW, logoH)
 
     // Tagline
     ctx.font = '56px Inter, Arial, sans-serif'
@@ -113,17 +90,11 @@ async function generateTemplate(qrUrl, format) {
   } else {
     // ── FORMAT CARRÉ (sacs) ───────────────────────────────────
 
-    // Logo + texte en haut
-    const logoSize = 90
-    const totalLogoW = logoSize + 20 + 340
-    const startX = (W - totalLogoW) / 2
-
-    drawSkanemLogo(ctx, startX, 80, logoSize)
-
-    ctx.fillStyle = '#ffffff'
-    ctx.font = 'bold 110px Inter, Arial, sans-serif'
-    ctx.textAlign = 'left'
-    ctx.fillText('SKANEMA', startX + logoSize + 20, 158)
+    // Logo Skanema (image réelle)
+    const logoImg = await getLogoImg()
+    const logoH = 140
+    const logoW = logoH * (logoImg.width / logoImg.height)
+    ctx.drawImage(logoImg, (W - logoW) / 2, 60, logoW, logoH)
 
     // Tagline
     ctx.font = '50px Inter, Arial, sans-serif'
