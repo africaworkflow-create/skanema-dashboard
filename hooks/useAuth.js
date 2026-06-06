@@ -64,6 +64,10 @@ export function AuthProvider({ children }) {
       Cookies.remove('skanema_token', { domain, path: '/' })
       Cookies.remove('skanema_user',  { domain, path: '/' })
     })
+
+    // Supprime aussi le cookie de session push
+      Cookies.remove('skanema_push_later')
+      
     document.cookie = 'skanema_token=;expires=Thu, 01 Jan 1970 00:00:00 GMT;domain=.skanema.com;path=/'
     document.cookie = 'skanema_user=;expires=Thu, 01 Jan 1970 00:00:00 GMT;domain=.skanema.com;path=/'
     fetchedRef.current = false
