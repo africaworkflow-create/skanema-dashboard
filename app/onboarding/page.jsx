@@ -252,7 +252,7 @@ function OnboardingContent() {
                   )
                 })}
               </div>
-              <button onClick={() => setStep(3)}
+              <button onClick={() => setStep(2)}
                 className="w-full bg-gray-900 text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-gray-800 active:scale-[0.98] transition-all">
                 Continuer <ArrowRight size={18} />
               </button>
