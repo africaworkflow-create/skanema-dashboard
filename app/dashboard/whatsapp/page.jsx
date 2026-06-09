@@ -76,7 +76,7 @@ export default function WhatsAppPage() {
       (response) => {
         if (!response.authResponse?.code) { setConnecting(false); setError('Connexion annulée ou refusée.') }
       },
-      { config_id: '', response_type: 'code', override_default_response_type: true,
+      { config_id: '1704259907386003', response_type: 'code', override_default_response_type: true,
         extras: { setup: {}, featureType: '', sessionInfoVersion: '3' } }
     )
   }
