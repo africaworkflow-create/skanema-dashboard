@@ -43,11 +43,11 @@ function Nav() {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
-          <Link href="/login"
+          <Link href="https://dashboard.skanema.com/login"
                 className="text-sm text-gray-600 hover:text-gray-900 transition-colors px-3 py-2">
             Connexion
           </Link>
-          <Link href="/onboarding"
+          <Link href="https://dashboard.skanema.com/onboarding"
                 className="bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-lg
                            hover:bg-gray-800 transition-colors">
             Démarrer gratuitement
@@ -70,11 +70,11 @@ function Nav() {
             </a>
           ))}
           <div className="pt-3 space-y-2 border-t border-gray-100 mt-2">
-            <Link href="/login"
+            <Link href="https://dashboard.skanema.com/login"
                   className="block text-center py-2.5 text-sm text-gray-600 border border-gray-200 rounded-lg">
               Connexion
             </Link>
-            <Link href="/onboarding"
+            <Link href="https://dashboard.skanema.com/onboarding"
                   className="block text-center py-2.5 text-sm font-medium bg-gray-900 text-white rounded-lg">
               Démarrer gratuitement
             </Link>
@@ -111,7 +111,7 @@ function Hero() {
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <Link href="/onboarding"
+          <Link href="https://dashboard.skanema.com/onboarding"
                 className="w-full sm:w-auto bg-gray-900 text-white font-medium px-6 py-3 rounded-xl
                            hover:bg-gray-800 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
             Démarrer gratuitement <ArrowRight size={16} />
@@ -506,7 +506,7 @@ function Pricing() {
                 ))}
               </ul>
 
-              <Link href={`/onboarding?plan=${plan.name.toLowerCase()}`}
+              <Link href={`https://dashboard.skanema.com/onboarding?plan=${plan.name.toLowerCase()}`}
                     className={`block text-center py-3 rounded-xl text-sm font-medium transition-all ${
                       plan.popular
                         ? 'bg-white text-gray-900 hover:bg-gray-100'
@@ -651,7 +651,7 @@ function CTAFinal() {
           Rejoignez les restaurants qui utilisent Skanema pour automatiser leurs commandes
           et augmenter leurs ventes.
         </p>
-        <Link href="/onboarding"
+        <Link href="https://dashboard.skanema.com/onboarding"
               className="inline-flex items-center gap-2 bg-white text-gray-900 font-medium
                          px-8 py-4 rounded-xl hover:bg-gray-100 active:scale-[0.98] transition-all text-sm">
           Démarrer gratuitement — 14 jours <ArrowRight size={16} />
