@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react'
 import { CheckCircle2, Circle, ChevronRight, X, Zap } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import api, { getMenu, getZones } from '@/lib/api'
-import Cookies from 'js-cookie'
 
 const STEPS = [
   { id: 'account',  label: 'Compte créé',                    desc: 'Votre restaurant est enregistré sur Skanema.',                                      done: true,  link: null,                  cta: null },
@@ -11,8 +10,6 @@ const STEPS = [
   { id: 'zones',    label: 'Configurez vos zones',           desc: 'Définissez vos zones et tarifs de livraison.',                                       done: false, link: '/dashboard/zones',    cta: 'Configurer les zones →' },
   { id: 'whatsapp', label: 'Connectez votre WhatsApp',       desc: 'Connectez votre numéro WhatsApp Business pour activer votre bot de commande.',       done: false, link: '/dashboard/whatsapp', cta: 'Connecter WhatsApp →' },
 ]
-
-const COOKIE_KEY = 'skanema_checklist_dismissed'
 
 export function SetupChecklist() {
   const { user, loading: authLoading } = useAuth()
@@ -23,11 +20,6 @@ export function SetupChecklist() {
   const [mounted,   setMounted]   = useState(false)
 
   useEffect(() => {
-    // Vérifie d'abord le cookie — instantané, pas de flash
-    if (Cookies.get(COOKIE_KEY)) {
-      setDismissed(true)
-      setLoading(false)
-    }
     setMounted(true)
   }, [])
 
@@ -37,10 +29,8 @@ export function SetupChecklist() {
     if (!user?.restaurantId) return
     if (dismissed) return
 
-    // Vérifie aussi en DB (cas multi-appareils)
+    // Vérifie en DB — source de vérité unique, synchronisé tous appareils
     if (user?.uiPreferences?.checklistDismissed) {
-      // Sync le cookie local
-      Cookies.set(COOKIE_KEY, '1', { expires: 365, sameSite: 'lax' })
       setDismissed(true)
       setLoading(false)
       return
@@ -82,8 +72,6 @@ export function SetupChecklist() {
   const progress  = Math.round((doneCount / steps.length) * 100)
 
   const handleDismiss = async () => {
-    // Cookie longue durée + DB — synchronisé partout
-    Cookies.set(COOKIE_KEY, '1', { expires: 365, sameSite: 'lax' })
     setDismissed(true)
     try { await api.patch('/api/auth/ui-preferences', { checklistDismissed: true }) } catch (_) {}
   }
