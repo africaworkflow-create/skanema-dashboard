@@ -50,10 +50,10 @@ export function NotificationBell() {
   const [loading,      setLoading]      = useState(false)
   const dropdownRef = useRef(null)
   const lastSeenRef = useRef(
-    typeof window !== 'undefined'
-      ? localStorage.getItem(STORAGE_KEY) || new Date(0).toISOString()
-      : new Date(0).toISOString()
-  )
+  typeof window !== 'undefined'
+    ? localStorage.getItem(STORAGE_KEY) || new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    : new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+)
 
   const poll = useCallback(async () => {
     try {
