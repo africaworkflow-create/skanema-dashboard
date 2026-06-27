@@ -35,6 +35,7 @@ export default function WhatsAppPage() {
     script.defer   = true
     document.body.appendChild(script)
 
+    // Stocke les données du MessageEvent pour les synchroniser avec FB.login
     const handleMessage = (event) => {
       if (event.origin !== 'https://www.facebook.com') return
       try {
@@ -42,7 +43,8 @@ export default function WhatsAppPage() {
         if (data.type === 'WA_EMBEDDED_SIGNUP') {
           if (data.event === 'FINISH') {
             const { phone_number_id, waba_id } = data.data
-            handleSignupComplete(data.authResponse?.code, waba_id, phone_number_id)
+            // Stocke dans window pour que FB.login callback puisse y accéder
+            window._skanemaWAData = { phone_number_id, waba_id }
           } else if (data.event === 'CANCEL') {
             setConnecting(false); setError('Connexion annulée.')
           } else if (data.event === 'ERROR') {
@@ -72,9 +74,22 @@ export default function WhatsAppPage() {
   const launchEmbeddedSignup = () => {
     if (!window.FB) { setError('SDK Facebook non chargé. Rechargez la page.'); return }
     setConnecting(true); setError('')
+    window._skanemaWAData = null // reset avant chaque tentative
     window.FB.login(
       (response) => {
-        if (!response.authResponse?.code) { setConnecting(false); setError('Connexion annulée ou refusée.') }
+        if (!response.authResponse?.code) {
+          setConnecting(false)
+          setError('Connexion annulée ou refusée.')
+          return
+        }
+        const code    = response.authResponse.code
+        const waData  = window._skanemaWAData
+        if (!waData?.waba_id || !waData?.phone_number_id) {
+          setConnecting(false)
+          setError('Données WhatsApp incomplètes. Réessayez.')
+          return
+        }
+        handleSignupComplete(code, waData.waba_id, waData.phone_number_id)
       },
       { config_id: '1704259907386003', response_type: 'code', override_default_response_type: true,
         extras: { setup: {}, featureType: '', sessionInfoVersion: '3' } }
